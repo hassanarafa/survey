@@ -9,12 +9,7 @@
 
     <!-- List of surveys -->
     <div v-if="!isSurveySelected && surveys.length">
-      <div
-          v-for="survey in surveys"
-          :key="survey.id"
-          class="survey-item"
-          @click="fetchSurveyQuestions(survey.id)"
-      >
+      <div v-for="survey in surveys" :key="survey.id" class="survey-item" @click="fetchSurveyQuestions(survey.id)">
         <h3>{{ survey.title }}</h3>
         <p>{{ survey.description }}</p>
 
@@ -27,71 +22,49 @@
     <div v-if="isSurveySelected && survey.questions.length" class="survey-form">
       <h2>{{ survey.title }}</h2>
 
-      <div
-          v-for="question in survey.questions"
-          :key="question.id"
-          class="question"
-          :class="{ submitted: submittedQuestions.includes(question.id) }"
-      >
+      <div v-for="question in survey.questions" :key="question.id" class="question"
+           :class="{ completed: isQuestionCompleted(question.id) }">
         <label :for="'question-' + question.id">{{ question.question_text }}</label>
 
-        <!-- Text Input -->
-        <div v-if="question.question_type === 'text'">
-          <input
-              v-model="answers[question.id]"
-              :id="'question-' + question.id"
-              type="text"
-              placeholder="Your answer"
-          />
-        </div>
+        <!-- Text Input (for non-rating and non-multiple choice questions) -->
+        <input
+            v-if="question.question_type !== 'rating' && question.question_type !== 'multiple_choice' && question.question_type !== 'dropdown' "
+            v-model="answers[question.id]" :id="'question-' + question.id" type="text" placeholder="Your answer"
+            :class="{ 'has-data': answers[question.id], 'default-border': !answers[question.id] }"/>
 
         <!-- Rating Input -->
         <div v-if="question.question_type === 'rating'">
           <div class="rating-scale">
-            <button
-                v-for="n in 10"
-                :key="n"
-                :class="['rating-button', { active: answers[question.id] === n }]"
-                @click="toggleRating(question.id, n)"
-                type="button"
-            >
+            <button v-for="n in 10" :key="n" :class="['rating-button', { active: answers[question.id] === n }]"
+                    @click="toggleRating(question.id, n)" type="button">
               {{ n }}
             </button>
           </div>
         </div>
 
         <!-- Multiple Choice Input -->
-        <div v-if="question.question_type === 'multiple_choice' && question.answers.length">
+        <div v-if="question.question_type === 'multiple_choice' && question.answers && question.answers.length">
           <div class="options horizontal">
-            <div
-                v-for="option in question.answers"
-                :key="option.id"
-                :class="['option', { selected: answers[question.id] === (option.answer === 'Yes' ? 4 : option.answer === 'No' ? 5 : option.answer) }]"
-                @click="selectChoice(question.id, option.answer)"
-            >
+            <div v-for="option in question.answers" :key="option.id"
+                 :class="['option', { selected: answers[question.id] === option.answer }]"
+                 @click="toggleOption(question.id, option.answer)">
               <span>{{ option.answer }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Dropdown Input -->
-        <div v-if="question.question_type === 'dropdown' && question.answers.length">
-          <select v-model="answers[question.id]" :id="'question-' + question.id">
-            <option
-                v-for="option in question.answers"
-                :key="option.id"
-                :value="option.answer === 'Yes' ? 4 : option.answer === 'No' ? 5 : option.answer"
-            >
-              {{ option.answer }}
-            </option>
-          </select>
+
+        <!-- Searchable Dropdown Input -->
+        <div v-if="question.question_type === 'dropdown' && question.answers && question.answers.length">
+          <multiselect v-model="answers[question.id]" :options="question.answers.map(option => option.answer)"
+                       :searchable="true" :placeholder="'Select an option'" track-by="answer"
+                       :allow-empty="true"></multiselect>
         </div>
 
         <!-- Fallback if no options -->
         <div
-            v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && !question.answers.length"
-            class="no-options"
-        >
+            v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && (!question.answers || !question.answers.length)"
+            class="no-options">
           <em>No options available for this question.</em>
         </div>
       </div>
@@ -103,8 +76,12 @@
 
 <script>
 import axios from "axios";
+import Multiselect from "vue-multiselect"; // Import vue-multiselect
 
 export default {
+  components: {
+    Multiselect // Register the component
+  },
   data() {
     return {
       surveys: [],
@@ -126,22 +103,19 @@ export default {
     };
   },
   mounted() {
-    // Check if there is a success message in sessionStorage and show it
     const successMessage = sessionStorage.getItem("surveySuccessMessage");
 
     if (successMessage) {
       this.successMessage = successMessage;
 
-      // Show the success message at the top-right corner
       this.$nextTick(() => {
         const successMessageElement = document.querySelector('.success-message');
-        successMessageElement.classList.add('show'); // Add the class to show it
+        successMessageElement.classList.add('show');
 
-        // Remove the success message after 3 seconds
         setTimeout(() => {
           successMessageElement.classList.remove('show');
-          sessionStorage.removeItem("surveySuccessMessage"); // Remove the success message from sessionStorage
-        }, 3000); // Message stays visible for 3 seconds
+          sessionStorage.removeItem("surveySuccessMessage");
+        }, 3000);
       });
     }
 
@@ -173,43 +147,78 @@ export default {
       const userId = 5;
       const surveyId = 1;
 
-      this.$router.push({ name: 'userAnswer', params: { userId, surveyId } });
+      this.$router.push({name: 'userAnswer', params: {userId, surveyId}});
     },
     toggleRating(questionId, rating) {
       this.answers[questionId] = this.answers[questionId] === rating ? null : rating;
     },
-    selectChoice(questionId, choice) {
-      if (choice === "Yes") {
-        this.answers[questionId] = 4;
-      } else if (choice === "No") {
-        this.answers[questionId] = 5;
-      } else if (choice === "daily ") {
-        this.answers[questionId] = 12;
-      } else if (choice === "weekly") {
-        this.answers[questionId] = 13;
-      } else if (choice === "monthly") {
-        this.answers[questionId] = 14;
-      } else if (choice === "randomly") {
-        this.answers[questionId] = 15;
-      } else if (choice === "Under 25") {
-        this.answers[questionId] = 8;
-      } else if (choice === "25-34") {
-        this.answers[questionId] = 9;
-      } else if (choice === "35-44") {
-        this.answers[questionId] = 10;
-      } else if (choice === "45-54") {
-        this.answers[questionId] = 11;
+
+    toggleOption(questionId, selectedOption) {
+      if (this.answers[questionId] === selectedOption) {
+        this.answers[questionId] = null; // Unselect the option
       } else {
-        this.answers[questionId] = choice;
+        this.answers[questionId] = selectedOption; // Select the option
       }
     },
+
+    // Check if question is completed
+    isQuestionCompleted(questionId) {
+      return Object.prototype.hasOwnProperty.call(this.answers, questionId) && this.answers[questionId] !== null && this.answers[questionId] !== "";
+    },
+
     async submitSurvey() {
       console.log("Survey submit method triggered");
 
-      const answersArray = Object.keys(this.answers).map((id) => ({
-        question_id: Number(id),
-        answer: this.answers[id],
-      }));
+      const answersArray = Object.keys(this.answers).map((id) => {
+        const answerValue = this.answers[id];
+
+        let mappedAnswer;
+        switch (answerValue) {
+          case "yes":
+            mappedAnswer = 4;
+            break;
+          case "no":
+            mappedAnswer = 5;
+            break;
+          case "Under 25":
+            mappedAnswer = 8;
+            break;
+          case "25-34":
+            mappedAnswer = 9;
+            break;
+          case "35-44":
+            mappedAnswer = 10;
+            break;
+          case "45-54":
+            mappedAnswer = 11;
+            break;
+          case "daily":
+            mappedAnswer = 12;
+            break;
+          case "weekly":
+            mappedAnswer = 13;
+            break;
+          case "monthly":
+            mappedAnswer = 14;
+            break;
+          case "randomly":
+            mappedAnswer = 15;
+            break;
+          case "male\r\n":
+            mappedAnswer = 6;
+            break;
+          case "female\r\n":
+            mappedAnswer = 7;
+            break;
+          default:
+            mappedAnswer = answerValue;
+        }
+
+        return {
+          question_id: Number(id),
+          answer: mappedAnswer,
+        };
+      });
 
       const requestBody = {
         survey_id: 1,
@@ -233,12 +242,25 @@ export default {
             }
         );
 
-        if (response.status === 200) {
-          // Store the success message in sessionStorage before refreshing
-          sessionStorage.setItem("surveySuccessMessage", "Survey submitted successfully!");
+        console.log(response.status);
 
-          // Refresh the page
-           window.location.reload();
+        if (response.status === 201 || response.status === 200) {
+          sessionStorage.setItem("surveySuccessMessage", "Survey submitted successfully!");
+          this.successMessage = "Survey submitted successfully!";
+          this.$nextTick(() => {
+            const successMessageElement = document.querySelector('.success-message');
+            successMessageElement.classList.add('show');
+
+            setTimeout(() => {
+              successMessageElement.classList.remove('show');
+            }, 3000);
+          });
+
+          this.survey = {id: null, title: "", description: "", questions: []};
+          this.answers = {};
+          this.submittedQuestions = [];
+          this.isSurveySelected = false;
+          console.log("Success message set and survey form reset");
         } else {
           console.error("Error submitting survey:", response.statusText);
         }
@@ -251,7 +273,28 @@ export default {
 </script>
 
 <style scoped>
-/* Responsive Design Adjustments */
+@import "~vue-multiselect/dist/vue-multiselect.min.css";
+
+/* Green line for completed question */
+.question {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+.question.completed {
+  border-left: 5px solid green;
+  background-color: #f0fdf4;
+}
+
+.question label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #f26822;
+}
+
 .survey {
   padding: 1rem;
   max-width: 700px;
@@ -283,10 +326,14 @@ h2 {
   background-color: #f8f8f8;
 }
 
-.question {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+.multiselect .multiselect__single {
+  background-color: #f26822;
+  color: white;
+}
+
+.multiselect .multiselect__content .multiselect__option--highlight {
+  background-color: #f26822;
+  color: white;
 }
 
 label {
@@ -303,6 +350,21 @@ select {
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
+  color: #333;
+}
+
+input[type="text"]:focus,
+select:focus {
+  border-color: #f26822;
+  outline: none;
+}
+
+input[type="text"].has-data {
+  border-color: green;
+}
+
+input[type="text"].default-border {
+  border-color: #f26822;
 }
 
 .rating-scale {
@@ -385,8 +447,7 @@ select {
 }
 
 .full-width-btn {
-  width: 80%;
-  height: 50px;
+  width: 100%;
   padding: 1rem;
   background-color: #f26822;
   color: white;
@@ -395,10 +456,7 @@ select {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  display: block;
-  margin: 0 auto;
 }
-
 
 .history-btn {
   margin-top: 2rem;
@@ -431,19 +489,26 @@ select {
     padding: 1rem;
   }
 }
+
 @media (max-width: 768px) {
   .rating-button {
-    width: 30px; /* Adjust width for smaller screens */
-    height: 30px; /* Adjust height for smaller screens */
-    font-size: 0.9rem; /* Reduce font size on smaller screens */
+    width: 30px;
+    /* Adjust width for smaller screens */
+    height: 30px;
+    /* Adjust height for smaller screens */
+    font-size: 0.9rem;
+    /* Reduce font size on smaller screens */
   }
 }
 
 @media (max-width: 480px) {
   .rating-button {
-    width: 28px; /* Even smaller for mobile screens */
-    height: 28px; /* Even smaller for mobile screens */
-    font-size: 0.8rem; /* Reduce font size further */
+    width: 28px;
+    /* Even smaller for mobile screens */
+    height: 28px;
+    /* Even smaller for mobile screens */
+    font-size: 0.8rem;
+    /* Reduce font size further */
   }
 }
 </style>
