@@ -69,7 +69,7 @@
           <div v-else-if="(question.question_type === 'dropdown'||question.question_type === 'store_dropdown') && question.answers && question.answers.length">
             <multiselect
                 v-model="answers[question.id]"
-                :options="question.answers.map(option => (option.store_code +' - '+option.label))"
+                :options="question.answers.map((question.question_type === 'store_dropdown')?option => (option.store_code +' - '+option.label):option =>option.label)"
                 :searchable="true"
                 :placeholder="'Select an option'"
                 track-by="label"
@@ -79,6 +79,7 @@
 
           <!-- Fallback if no options -->
           <div v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && (!question.answers || !question.answers.length)" class="no-options">
+
             <em>No options available for this question.</em>
           </div>
         </div>
