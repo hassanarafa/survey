@@ -12,12 +12,9 @@
     <!-- Sidebar Menu -->
     <div :class="['sidebar', { open: menuOpen }]">
       <div class="sidebar-content">
-<!--        <p @click="navigateAndClose('/home')">Home</p>-->
-<!--        <p @click="navigateAndClose('/clock')">Clock</p>-->
-<!--        <p @click="navigateAndClose('/todo')">To Do List</p>-->
         <p @click="navigateAndClose('/survey')">Survey</p>
-<!--        <p @click="navigateAndClose('/admin')">Admin</p>-->
-<!--        <p @click="navigateAndClose('/surAdmin')">SurveyAdmin</p>-->
+        <!-- Logout Button -->
+        <p @click="logout" class="logout">Log Out</p>
       </div>
     </div>
   </div>
@@ -43,6 +40,12 @@ const closeSidebar = (e) => {
 const navigateAndClose = (path) => {
   router.push(path)
   menuOpen.value = false
+}
+
+const logout = () => {
+  console.log('Logging out...');
+  localStorage.removeItem('authToken');
+  router.replace('/');  // Redirect to login
 }
 
 onMounted(() => {
@@ -116,16 +119,31 @@ onBeforeUnmount(() => {
 .sidebar-content p {
   margin: 0 0 10px 0;
   padding: 12px 20px;
-  color: #f26822;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
   border-radius: 4px;
 }
 
+.sidebar-content p{
+  color: #f26822;
+}
+
 .sidebar-content p:hover {
   background-color: #f26822;
   color: white;
+}
+
+/* Logout Button */
+.logout {
+  color: #f26822;
+  font-weight: bold;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.logout:hover {
+  background-color: #f26822;
 }
 
 /* Responsive — Sidebar always triggered with hamburger */

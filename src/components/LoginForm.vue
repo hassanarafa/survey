@@ -3,14 +3,16 @@
     <form class="custom-form" @submit.prevent="handleLogin">
       <p class="text-form">Login Form</p>
       <div class="form-group">
-        <label for="name">Name</label>
+        <label for="email">Email</label>
         <input
             type="text"
             class="form-control"
-            id="name"
-            v-model="name"
-            placeholder="Enter your name"
+            id="email"
+            v-model="email"
+            placeholder="Enter your email"
+            :class="{'invalid': emailError}"
         />
+        <p v-if="emailError" class="error-message">{{ emailError }}</p>
 
         <label for="password">Password</label>
         <input
@@ -19,12 +21,14 @@
             id="password"
             v-model="password"
             placeholder="Enter your password"
+            :class="{'invalid': passwordError}"
         />
+        <p v-if="passwordError" class="error-message">{{ passwordError }}</p>
       </div>
 
       <button type="submit" class="submit-btn">Submit</button>
       <p v-if="locationName">📌 Location: {{ locationName }}</p>
-
+      <p v-if="error" class="login-failed-message">{{ error }}</p>
     </form>
   </div>
 </template>
@@ -35,64 +39,61 @@ import axios from "axios";
 export default {
   data() {
     return {
-      name: '',
+      email: '',
       password: '',
       location: null,
       locationName: null,
       error: null,
+      emailError: null,
+      passwordError: null,
     };
   },
   methods: {
-    // Handles the login process
     async handleLogin() {
-      try {
-        // You can add your login API call here and check if login is successful
-        // const response = await axios.post('http://localhost:3000/login', {
-        //   name: this.name,
-        //   password: this.password,
-        // });
+      this.emailError = null;
+      this.passwordError = null;
+      this.error = null;
 
-        // Check if the login is successful
-        if (this.name && this.password) {  // Simulate login check
-          // Redirect to HomeView after successful login
+      if (!this.email) {
+        this.emailError = 'Email is required';
+      } else if (!this.isValidEmail(this.email)) {
+        this.emailError = 'Please enter a valid email address';
+      }
+
+      if (!this.password) {
+        this.passwordError = 'Password is required';
+      }
+
+      if (this.emailError || this.passwordError) {
+        return;
+      }
+
+      try {
+        const response = await axios.post('https://survey.dd-ops.com/api/login', {
+          email: this.email,
+          password: this.password,
+        });
+
+        // Log the response to check if it's successful
+        console.log('Login response:', response);
+
+        if (response.data.message === 'Login successful') {
+          console.log("/*/*/*/*/");
+          localStorage.setItem('authToken', 'true');
           this.$router.push('/survey');
         } else {
-          this.error = 'Login failed. Please check your credentials.';
+          this.error = 'Login failed. Please check your credentials and try again.';
         }
       } catch (err) {
+        // Log the error to check if there's an issue with the request
+        console.error('Error during login:', err);
         this.error = 'Login failed. Please check your credentials and try again.';
       }
     },
-    getLocation() {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              this.location = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-              };
-              this.error = null;
 
-              // Fetch location name using OpenStreetMap
-              this.getLocationName(this.location.lat, this.location.lng);
-            },
-            (err) => {
-              this.error = "Error getting location: " + err.message;
-            }
-        );
-      } else {
-        this.error = "Geolocation is not supported by your browser.";
-      }
-    },
-    async getLocationName(lat, lng) {
-      try {
-        const response = await axios.get(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-        );
-        this.locationName = response.data.display_name;
-      } catch (error) {
-        this.error = "Failed to get location name.";
-      }
+    isValidEmail(email) {
+      const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      return emailPattern.test(email);
     },
   },
 };
@@ -118,7 +119,7 @@ export default {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
-.text-form{
+.text-form {
   margin: 20px;
   text-align: center;
   color: #eb804b;
@@ -152,6 +153,12 @@ label {
   outline: none;
 }
 
+.form-control.invalid {
+  border-color: #e74c3c; /* Red border */
+  background-color: #f8d7da; /* Light red background */
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.3); /* Light red shadow */
+}
+
 .submit-btn {
   width: 100%;
   padding: 12px;
@@ -168,4 +175,30 @@ label {
 .submit-btn:hover {
   background-color: #eb804b;
 }
+
+/* Error message styling for invalid inputs */
+.error-message {
+  color: #e74c3c; /* Red text */
+  font-size: 14px;
+  text-align: left;
+  margin-top: -12px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  padding-left: 10px;
+}
+
+/* Styling for the Login failed message */
+.login-failed-message {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #f8d7da; /* Light red background */
+  color: #721c24; /* Dark red text */
+  border-radius: 8px;
+  border: 1px solid #f5c6cb; /* Light red border */
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.2); /* Light red shadow */
+}
+
 </style>

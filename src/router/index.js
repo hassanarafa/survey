@@ -27,4 +27,18 @@ const router = createRouter({
     routes,
 });
 
+router.beforeEach((to, from, next) => {
+    const isAuthenticated = !!localStorage.getItem('authToken') // check if user is logged in
+
+    if (to.path === '/' && isAuthenticated) {
+        // If user tries to go to Login page while authenticated, redirect to Home
+        next('/survey')
+    } else if (to.path !== '/' && !isAuthenticated) {
+        // If user tries to access any page without logging in, redirect to Login
+        next('/')
+    } else {
+        next() // Otherwise allow navigation
+    }
+})
+
 export default router;

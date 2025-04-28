@@ -11,65 +11,86 @@
     <div v-if="!isSurveySelected && surveys.length">
       <div v-for="survey in surveys" :key="survey.id" class="survey-item" @click="fetchSurveyQuestions(survey.id)">
         <h3>{{ survey.title }}</h3>
-        <p>{{ survey.description }}</p>
+        <p v-if="survey.description">{{ survey.description }}</p>
 
         <!-- History Button -->
-        <button @click="viewHistory(survey.id)" class="history-btn">View History</button>
+        <button @click.stop="viewHistory(survey.id)" class="history-btn">View History</button>
       </div>
     </div>
 
     <!-- Survey Questions -->
-    <div v-if="isSurveySelected && survey.questions.length" class="survey-form">
+    <div v-if="isSurveySelected && survey.pages && Object.keys(survey.pages).length" class="survey-form">
       <h2>{{ survey.title }}</h2>
 
-      <div v-for="question in survey.questions" :key="question.id" class="question"
-           :class="{ completed: isQuestionCompleted(question.id) }">
-        <label :for="'question-' + question.id">{{ question.question_text }}</label>
+      <!-- Display Current Page -->
+      <div class="survey-page">
+        <h3 class="pagNum">Page {{ currentPage }}</h3>
+        <div v-for="question in survey.pages[currentPage]" :key="question.id" class="question" :class="{ completed: isQuestionCompleted(question.id) }">
+          <label :for="'question-' + question.id">{{ question.question_text }}</label>
 
-        <!-- Text Input (for non-rating and non-multiple choice questions) -->
-        <input
-            v-if="question.question_type !== 'rating' && question.question_type !== 'multiple_choice' && question.question_type !== 'dropdown' "
-            v-model="answers[question.id]" :id="'question-' + question.id" type="text" placeholder="Your answer"
-            :class="{ 'has-data': answers[question.id], 'default-border': !answers[question.id] }"/>
+          <!-- Text Input -->
+          <input
+              v-if="question.question_type === 'text'"
+              v-model="answers[question.id]"
+              :id="'question-' + question.id"
+              type="text"
+              placeholder="Your answer"
+              :class="{ 'has-data': answers[question.id], 'default-border': !answers[question.id] }"
+          />
 
-        <!-- Rating Input -->
-        <div v-if="question.question_type === 'rating'">
-          <div class="rating-scale">
-            <button v-for="n in 10" :key="n" :class="['rating-button', { active: answers[question.id] === n }]"
-                    @click="toggleRating(question.id, n)" type="button">
+          <!-- Rating Input -->
+          <div v-else-if="question.question_type === 'rating'" class="rating-scale">
+            <button
+                v-for="n in 10"
+                :key="n"
+                :class="['rating-button', { active: answers[question.id] === n }]"
+                @click="toggleRating(question.id, n)"
+                type="button"
+            >
               {{ n }}
             </button>
           </div>
-        </div>
 
-        <!-- Multiple Choice Input -->
-        <div v-if="question.question_type === 'multiple_choice' && question.answers && question.answers.length">
-          <div class="options horizontal">
-            <div v-for="option in question.answers" :key="option.id"
-                 :class="['option', { selected: answers[question.id] === option.answer }]"
-                 @click="toggleOption(question.id, option.answer)">
-              <span>{{ option.answer }}</span>
+          <!-- Multiple Choice -->
+          <div v-else-if="question.question_type === 'multiple_choice' && question.answers && question.answers.length">
+            <div class="options horizontal">
+              <div
+                  v-for="option in question.answers"
+                  :key="option.id"
+                  :class="['option', { selected: answers[question.id] === option.label }]"
+                  @click="toggleOption(question.id, option.label)"
+              >
+                <span>{{ option.label }}</span>
+              </div>
             </div>
           </div>
-        </div>
 
+          <!-- Dropdown -->
+          <div v-else-if="(question.question_type === 'dropdown'||question.question_type === 'store_dropdown') && question.answers && question.answers.length">
+            <multiselect
+                v-model="answers[question.id]"
+                :options="question.answers.map(option => (option.store_code +' - '+option.label))"
+                :searchable="true"
+                :placeholder="'Select an option'"
+                track-by="label"
+                :allow-empty="true"
+            />
+          </div>
 
-        <!-- Searchable Dropdown Input -->
-        <div v-if="question.question_type === 'dropdown' && question.answers && question.answers.length">
-          <multiselect v-model="answers[question.id]" :options="question.answers.map(option => option.answer)"
-                       :searchable="true" :placeholder="'Select an option'" track-by="answer"
-                       :allow-empty="true"></multiselect>
-        </div>
-
-        <!-- Fallback if no options -->
-        <div
-            v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && (!question.answers || !question.answers.length)"
-            class="no-options">
-          <em>No options available for this question.</em>
+          <!-- Fallback if no options -->
+          <div v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && (!question.answers || !question.answers.length)" class="no-options">
+            <em>No options available for this question.</em>
+          </div>
         </div>
       </div>
 
-      <button class="full-width-btn" type="submit" @click="submitSurvey">Submit Survey</button>
+      <div class="button-row">
+        <button v-if="currentPage > 1" class="nav-btn" @click="goToPreviousPage">Back</button>
+        <button v-if="currentPage < totalPages" class="nav-btn" @click="goToNextPage">Next</button>
+        <button v-if="currentPage === totalPages" class="nav-btn submit-btn" @click="submitSurvey">Submit Survey</button>
+      </div>
+
+
     </div>
   </div>
 </template>
@@ -89,17 +110,19 @@ export default {
         id: null,
         title: "",
         description: "",
-        questions: [],
+        pages_count: 0,
+        pages: {},
       },
       answers: {},
       submittedQuestions: [],
       isSurveySelected: false,
       successMessage: "",
+      currentPage: 1, // Track the current page
+      totalPages: 0, // Total number of pages
       user_id: 5,
       store_id: 1,
       customer_name: "John Doe",
       customer_phone: "0123456789",
-      userAnswers: {}, // Store user answers history
     };
   },
   mounted() {
@@ -139,6 +162,8 @@ export default {
         this.answers = {};
         this.submittedQuestions = [];
         this.isSurveySelected = true;
+        this.currentPage = 1; // Reset to first page
+        this.totalPages = Object.keys(data.pages).length; // Set total pages
       } catch (error) {
         console.error("Error fetching survey questions:", error);
       }
@@ -161,9 +186,21 @@ export default {
       }
     },
 
+    goToPreviousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+
     // Check if question is completed
     isQuestionCompleted(questionId) {
       return Object.prototype.hasOwnProperty.call(this.answers, questionId) && this.answers[questionId] !== null && this.answers[questionId] !== "";
+    },
+
+    goToNextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
     },
 
     async submitSurvey() {
@@ -255,19 +292,13 @@ export default {
               successMessageElement.classList.remove('show');
             }, 3000);
           });
-
-          this.survey = {id: null, title: "", description: "", questions: []};
-          this.answers = {};
-          this.submittedQuestions = [];
           this.isSurveySelected = false;
-          console.log("Success message set and survey form reset");
-        } else {
-          console.error("Error submitting survey:", response.statusText);
+          this.survey = {};
         }
       } catch (error) {
         console.error("Error submitting survey:", error);
       }
-    }
+    },
   },
 };
 </script>
@@ -296,12 +327,17 @@ export default {
 }
 
 .survey {
-  padding: 1rem;
+  padding: 3rem;
   max-width: 700px;
-  margin: 0 auto;
+  margin: 15px auto;
   background-color: #fdfdfd;
   border: 1px solid #ddd;
   border-radius: 8px;
+}
+
+.pagNum{
+  color: #f26822;
+  margin-left: 20px;
 }
 
 h2 {
@@ -419,6 +455,62 @@ input[type="text"].default-border {
   margin-top: 1rem;
 }
 
+.nav-btn {
+  flex: 1; /* Make all buttons take equal width */
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #f26822;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.25s ease;
+}
+
+.nav-btn:hover {
+  background: #f26822;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(53, 122, 189, 0.4);
+}
+
+.nav-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.5);
+}
+
+.nav-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.submit-btn {
+  flex: 1; /* Make all buttons take equal width */
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #f26822;
+}
+
+.submit-btn:hover {
+  background: #d4571b;
+}
+
+.submit-btn:focus {
+  box-shadow: 0 0 0 3px rgba(242, 104, 34, 0.5);
+}
+
+
+
+.button-row {
+  display: flex;
+  justify-content: space-between; /* Ensures buttons are spaced apart */
+  gap: 10px; /* Optional: Adds space between the buttons */
+  margin-top: 20px; /* Optional: Adds space above the buttons */
+}
+
 .option {
   flex: 1 1 auto;
   min-width: 100px;
@@ -444,18 +536,6 @@ input[type="text"].default-border {
   background-color: #f26822;
   transform: scale(1.05);
   color: white;
-}
-
-.full-width-btn {
-  width: 100%;
-  padding: 1rem;
-  background-color: #f26822;
-  color: white;
-  font-size: 1.2rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
 .history-btn {
