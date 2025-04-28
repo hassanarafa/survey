@@ -328,7 +328,7 @@ export default {
 }
 
 .survey {
-  padding: 3rem;
+  padding: 3rem 1rem;
   max-width: 700px;
   margin: 15px auto;
   background-color: #fdfdfd;
