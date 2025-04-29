@@ -79,7 +79,6 @@
 
           <!-- Fallback if no options -->
           <div v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && (!question.answers || !question.answers.length)" class="no-options">
-
             <em>No options available for this question.</em>
           </div>
         </div>
@@ -88,10 +87,15 @@
       <div class="button-row">
         <button v-if="currentPage > 1" class="nav-btn" @click="goToPreviousPage">Back</button>
         <button v-if="currentPage < totalPages" class="nav-btn" @click="goToNextPage">Next</button>
-        <button v-if="currentPage === totalPages" class="nav-btn submit-btn" @click="submitSurvey">Submit Survey</button>
+        <button
+            v-if="currentPage === totalPages"
+            class="nav-btn submit-btn"
+            @click="submitSurvey"
+            :disabled="isSubmitting"
+        >
+          Submit Survey
+        </button>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -124,6 +128,7 @@ export default {
       store_id: 1,
       customer_name: "John Doe",
       customer_phone: "0123456789",
+      isSubmitting: false, // Track the submission state
     };
   },
   mounted() {
@@ -205,6 +210,9 @@ export default {
     },
 
     async submitSurvey() {
+      if (this.isSubmitting) return; // Prevent multiple submissions
+
+      this.isSubmitting = true; // Disable the submit button
       console.log("Survey submit method triggered");
 
       const answersArray = Object.keys(this.answers).map((id) => {
@@ -230,7 +238,7 @@ export default {
           case "45-54":
             mappedAnswer = 11;
             break;
-          case "daily":
+          case "daily ":
             mappedAnswer = 12;
             break;
           case "weekly":
@@ -298,9 +306,11 @@ export default {
         }
       } catch (error) {
         console.error("Error submitting survey:", error);
+      } finally {
+        this.isSubmitting = false; // Re-enable the submit button
       }
-    },
-  },
+    }
+  }
 };
 </script>
 
@@ -502,7 +512,6 @@ input[type="text"].default-border {
 .submit-btn:focus {
   box-shadow: 0 0 0 3px rgba(242, 104, 34, 0.5);
 }
-
 
 
 .button-row {
