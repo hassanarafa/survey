@@ -198,10 +198,9 @@ export default {
           case "25-34": mappedAnswer = 30; break;
           case "35-44": mappedAnswer = 31; break;
           case "45-54": mappedAnswer = 32; break;
-          case "daily ": mappedAnswer = 13; break;
-          case "weekly": mappedAnswer = 14; break;
-          case "monthly": mappedAnswer = 15; break;
-          case "randomly": mappedAnswer = 16; break;
+          case "daily ": mappedAnswer = 33; break;
+          case "weekly": mappedAnswer = 34; break;
+          case "monthly": mappedAnswer = 35; break;
           case "frequently": mappedAnswer = 37; break;
           case "male\r\n": mappedAnswer = 27; break;
           case "female\r\n": mappedAnswer = 28; break;
