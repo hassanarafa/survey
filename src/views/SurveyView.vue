@@ -1,44 +1,43 @@
 <template>
   <div class="survey">
-    <h2>Surveys</h2>
+    <h2>Survey Details</h2>
 
-    <!-- Success Message -->
-    <div v-if="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
-
-    <!-- List of surveys -->
-    <div v-if="!isSurveySelected && surveys.length">
-      <div v-for="survey in surveys" :key="survey.id" class="survey-item" @click="fetchSurveyQuestions(survey.id)">
-        <h3>{{ survey.title }}</h3>
-        <p v-if="survey.description">{{ survey.description }}</p>
-
-        <!-- History Button -->
-        <button @click.stop="viewHistory(survey.id)" class="history-btn">View History</button>
-      </div>
-    </div>
-
-    <!-- Survey Questions -->
     <div v-if="isSurveySelected && survey.pages && Object.keys(survey.pages).length" class="survey-form">
       <h2>{{ survey.title }}</h2>
 
-      <!-- Display Current Page -->
       <div class="survey-page">
         <h3 class="pagNum">Page {{ currentPage }}</h3>
-        <div v-for="question in survey.pages[currentPage]" :key="question.id" class="question" :class="{ completed: isQuestionCompleted(question.id) }">
-          <label :for="'question-' + question.id">{{ question.question_text }}</label>
 
-          <!-- Text Input -->
+        <div
+            v-for="question in filteredQuestions"
+            :key="question.id"
+            class="question"
+            :class="{ completed: isQuestionCompleted(question.id) }"
+        >
+          <label :for="'question-' + question.id">
+            {{ question.question_text }}
+            <span v-if="question.is_required" class="required-star">★</span>
+          </label>
+
+          <!-- Auto-fill for Manager Name -->
           <input
-              v-if="question.question_type === 'text'"
+              v-if="question.question_text === 'Manager Name'"
+              :id="'question-' + question.id"
+              type="text"
+              :value="managerName"
+              readonly
+              class="has-data"
+          />
+
+          <input
+              v-else-if="question.question_type === 'text'"
               v-model="answers[question.id]"
               :id="'question-' + question.id"
               type="text"
               placeholder="Your answer"
-              :class="{ 'has-data': answers[question.id], 'default-border': !answers[question.id] }"
+              :class="{ 'has-data': answers[question.id] }"
           />
 
-          <!-- Rating Input -->
           <div v-else-if="question.question_type === 'rating'" class="rating-scale">
             <button
                 v-for="n in 10"
@@ -51,8 +50,7 @@
             </button>
           </div>
 
-          <!-- Multiple Choice -->
-          <div v-else-if="question.question_type === 'multiple_choice' && question.answers && question.answers.length">
+          <div v-else-if="question.question_type === 'multiple_choice' && question.answers?.length">
             <div class="options horizontal">
               <div
                   v-for="option in question.answers"
@@ -65,20 +63,27 @@
             </div>
           </div>
 
-          <!-- Dropdown -->
-          <div v-else-if="(question.question_type === 'dropdown'||question.question_type === 'store_dropdown') && question.answers && question.answers.length">
+          <div
+              v-else-if="(question.question_type === 'dropdown' || question.question_type === 'store_dropdown') && question.answers?.length"
+          >
             <multiselect
                 v-model="answers[question.id]"
-                :options="question.answers.map((question.question_type === 'store_dropdown')?option => (option.store_code +' - '+option.label):option =>option.label)"
+                :options="question.answers.map(
+                question.question_type === 'store_dropdown'
+                  ? option => `${option.store_code} - ${option.label}`
+                  : option => option.label
+              )"
                 :searchable="true"
-                :placeholder="'Select an option'"
+                placeholder="Select an option"
                 track-by="label"
                 :allow-empty="true"
             />
           </div>
 
-          <!-- Fallback if no options -->
-          <div v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && (!question.answers || !question.answers.length)" class="no-options">
+          <div
+              v-if="(question.question_type === 'multiple_choice' || question.question_type === 'dropdown') && (!question.answers?.length)"
+              class="no-options"
+          >
             <em>No options available for this question.</em>
           </div>
         </div>
@@ -86,13 +91,10 @@
 
       <div class="button-row">
         <button v-if="currentPage > 1" class="nav-btn" @click="goToPreviousPage">Back</button>
-        <button v-if="currentPage < totalPages" class="nav-btn" @click="goToNextPage">Next</button>
-        <button
-            v-if="currentPage === totalPages"
-            class="nav-btn submit-btn"
-            @click="submitSurvey"
-            :disabled="isSubmitting"
-        >
+        <button v-if="currentPage < totalPages" class="nav-btn" @click="goToNextPage" :disabled="!isPageValid()">
+          Next
+        </button>
+        <button v-if="currentPage === totalPages" class="nav-btn submit-btn" @click="submitSurvey" :disabled="!isFormValid()">
           Submit Survey
         </button>
       </div>
@@ -102,162 +104,108 @@
 
 <script>
 import axios from "axios";
-import Multiselect from "vue-multiselect"; // Import vue-multiselect
+import Multiselect from "vue-multiselect";
 
 export default {
-  components: {
-    Multiselect // Register the component
-  },
+  components: { Multiselect },
   data() {
     return {
-      surveys: [],
-      survey: {
-        id: null,
-        title: "",
-        description: "",
-        pages_count: 0,
-        pages: {},
-      },
+      survey: { id: null, title: "", description: "", pages_count: 0, pages: {} },
       answers: {},
-      submittedQuestions: [],
       isSurveySelected: false,
       successMessage: "",
-      currentPage: 1, // Track the current page
-      totalPages: 0, // Total number of pages
+      currentPage: 1,
+      totalPages: 0,
       user_id: 5,
       store_id: 1,
       customer_name: "John Doe",
       customer_phone: "0123456789",
-      isSubmitting: false, // Track the submission state
+      isSubmitting: false,
+      managerName: localStorage.getItem("userName") || "",
     };
   },
+  computed: {
+    filteredQuestions() {
+      return this.survey.pages[this.currentPage].filter(question => this.shouldShowQuestion(question));
+    },
+  },
   mounted() {
-    const successMessage = sessionStorage.getItem("surveySuccessMessage");
-
-    if (successMessage) {
-      this.successMessage = successMessage;
-
-      this.$nextTick(() => {
-        const successMessageElement = document.querySelector('.success-message');
-        successMessageElement.classList.add('show');
-
-        setTimeout(() => {
-          successMessageElement.classList.remove('show');
-          sessionStorage.removeItem("surveySuccessMessage");
-        }, 3000);
-      });
-    }
-
-    this.fetchSurveys();
+    console.log(this.managerName)
+    const surveyId = this.$route.params.id;
+    this.fetchSurveyQuestions(surveyId);
   },
   methods: {
-    async fetchSurveys() {
-      try {
-        const response = await fetch("https://survey.dd-ops.com/api/get_surveys");
-        const data = await response.json();
-        this.surveys = data;
-      } catch (error) {
-        console.error("Error fetching surveys:", error);
-      }
-    },
     async fetchSurveyQuestions(surveyId) {
       try {
         const response = await fetch(`https://survey.dd-ops.com/api/survey/${surveyId}`);
         const data = await response.json();
         this.survey = data;
         this.answers = {};
-        this.submittedQuestions = [];
         this.isSurveySelected = true;
-        this.currentPage = 1; // Reset to first page
-        this.totalPages = Object.keys(data.pages).length; // Set total pages
+        this.currentPage = 1;
+        this.totalPages = Object.keys(data.pages).length;
       } catch (error) {
         console.error("Error fetching survey questions:", error);
       }
     },
-    viewHistory() {
-      const userId = 5;
-      const surveyId = 1;
 
-      this.$router.push({name: 'userAnswer', params: {userId, surveyId}});
-    },
     toggleRating(questionId, rating) {
       this.answers[questionId] = this.answers[questionId] === rating ? null : rating;
     },
 
     toggleOption(questionId, selectedOption) {
-      if (this.answers[questionId] === selectedOption) {
-        this.answers[questionId] = null; // Unselect the option
-      } else {
-        this.answers[questionId] = selectedOption; // Select the option
-      }
+      this.answers[questionId] = this.answers[questionId] === selectedOption ? null : selectedOption;
     },
 
     goToPreviousPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-      }
-    },
-
-    // Check if question is completed
-    isQuestionCompleted(questionId) {
-      return Object.prototype.hasOwnProperty.call(this.answers, questionId) && this.answers[questionId] !== null && this.answers[questionId] !== "";
+      if (this.currentPage > 1) this.currentPage--;
     },
 
     goToNextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-      }
+      if (this.isPageValid()) this.currentPage++;
+    },
+
+    isQuestionCompleted(questionId) {
+      return this.answers[questionId] !== null && this.answers[questionId] !== undefined && this.answers[questionId] !== "";
+    },
+
+    isPageValid() {
+      return this.survey.pages[this.currentPage].every((question) => {
+        if (question.question_text === 'Manager Name') return true;
+        return !question.is_required || this.isQuestionCompleted(question.id);
+      });
+    },
+
+    isFormValid() {
+      return Object.values(this.survey.pages).every((questions) => {
+        return questions.every((question) => {
+          if (question.question_text === 'Manager Name') return true;
+          return !question.is_required || this.isQuestionCompleted(question.id);
+        });
+      });
     },
 
     async submitSurvey() {
-      if (this.isSubmitting) return; // Prevent multiple submissions
+      if (this.isSubmitting) return;
+      this.isSubmitting = true;
 
-      this.isSubmitting = true; // Disable the submit button
-      console.log("Survey submit method triggered");
-
-      const answersArray = Object.keys(this.answers).map((id) => {
-        const answerValue = this.answers[id];
-
+      const answersArray = Object.entries(this.answers).map(([id, value]) => {
         let mappedAnswer;
-        switch (answerValue) {
-          case "yes":
-            mappedAnswer = 4;
-            break;
-          case "no":
-            mappedAnswer = 5;
-            break;
-          case "Under 25":
-            mappedAnswer = 8;
-            break;
-          case "25-34":
-            mappedAnswer = 9;
-            break;
-          case "35-44":
-            mappedAnswer = 10;
-            break;
-          case "45-54":
-            mappedAnswer = 11;
-            break;
-          case "daily ":
-            mappedAnswer = 12;
-            break;
-          case "weekly":
-            mappedAnswer = 13;
-            break;
-          case "monthly":
-            mappedAnswer = 14;
-            break;
-          case "randomly":
-            mappedAnswer = 15;
-            break;
-          case "male\r\n":
-            mappedAnswer = 6;
-            break;
-          case "female\r\n":
-            mappedAnswer = 7;
-            break;
-          default:
-            mappedAnswer = answerValue;
+        switch (value) {
+          case "yes": mappedAnswer = 25; break;
+          case "no": mappedAnswer = 26; break;
+          case "Under 25": mappedAnswer = 29; break;
+          case "25-34": mappedAnswer = 30; break;
+          case "35-44": mappedAnswer = 31; break;
+          case "45-54": mappedAnswer = 32; break;
+          case "daily ": mappedAnswer = 13; break;
+          case "weekly": mappedAnswer = 14; break;
+          case "monthly": mappedAnswer = 15; break;
+          case "randomly": mappedAnswer = 16; break;
+          case "frequently": mappedAnswer = 37; break;
+          case "male\r\n": mappedAnswer = 27; break;
+          case "female\r\n": mappedAnswer = 28; break;
+          default: mappedAnswer = value;
         }
 
         return {
@@ -267,74 +215,83 @@ export default {
       });
 
       const requestBody = {
-        survey_id: 1,
-        user_id: 5,
+        survey_id: this.survey.id,
+        user_id: this.user_id,
         store_id: this.store_id,
         customer_name: this.customer_name,
         customer_phone: this.customer_phone,
         answers: answersArray,
       };
 
-      console.log(requestBody);
-
       try {
-        const response = await axios.post(
-            "https://survey.dd-ops.com/api/store_submissions",
-            requestBody,
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-        );
+        const response = await axios.post("https://survey.dd-ops.com/api/store_submissions", requestBody, {
+          headers: { "Content-Type": "application/json" },
+        });
 
-        console.log(response.status);
-
-        if (response.status === 201 || response.status === 200) {
-          sessionStorage.setItem("surveySuccessMessage", "Survey submitted successfully!");
+        if (response.status === 200 || response.status === 201) {
           this.successMessage = "Survey submitted successfully!";
-          this.$nextTick(() => {
-            const successMessageElement = document.querySelector('.success-message');
-            successMessageElement.classList.add('show');
-
-            setTimeout(() => {
-              successMessageElement.classList.remove('show');
-            }, 3000);
-          });
+          sessionStorage.setItem("surveySuccessMessage", "Survey submitted successfully!");
+          this.answers = {};
           this.isSurveySelected = false;
-          this.survey = {};
+          this.$router.push({ name: "SurveyList" });
         }
       } catch (error) {
         console.error("Error submitting survey:", error);
-      } finally {
-        this.isSubmitting = false; // Re-enable the submit button
+        this.isSubmitting = false;
       }
+    },
+
+    shouldShowQuestion(question) {
+      if (question.question_text === 'If "No", reason for not recommending') {
+        const relatedQuestion = Object.values(this.survey.pages).flat().find(
+            q => q.question_text?.trim().toLowerCase() === "recommend promotion or award?".toLowerCase()
+        );
+        if (!relatedQuestion || !this.answers[relatedQuestion.id]) return false;
+        return String(this.answers[relatedQuestion.id]).trim().toLowerCase() === "no";
+      }
+
+      if (question.question_text === "if no What's is the main reason you don't want to recommend us?") {
+        const relatedQuestion = Object.values(this.survey.pages).flat().find(
+            q => q.question_text?.trim().toLowerCase() === "would you recommend this to your friends/family? ( yes or no)".toLowerCase()
+        );
+        if (!relatedQuestion || !this.answers[relatedQuestion.id]) return false;
+        return String(this.answers[relatedQuestion.id]).trim().toLowerCase() === "no";
+      }
+
+      return true;
     }
-  }
+
+  },
 };
 </script>
 
 <style scoped>
 @import "~vue-multiselect/dist/vue-multiselect.min.css";
 
-/* Green line for completed question */
 .question {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  position: relative;
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
 }
 
-.question.completed {
-  border-left: 5px solid green;
-  background-color: #f0fdf4;
+.question input,
+.question .option {
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
-.question label {
+.required-star {
+  color: #e74c3c;
+  margin-left: 5px;
   font-weight: bold;
-  display: block;
-  margin-bottom: 0.4rem;
-  color: #f26822;
+}
+
+.nav-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 
 .survey {
@@ -358,21 +315,6 @@ h2 {
   font-size: 1.8rem;
 }
 
-.survey-item {
-  position: relative;
-  padding: 1.2rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  background-color: #fff;
-}
-
-.survey-item:hover {
-  background-color: #f8f8f8;
-}
-
 .multiselect .multiselect__single {
   background-color: #f26822;
   color: white;
@@ -392,7 +334,7 @@ label {
 
 input[type="text"],
 select {
-  width: 100%;
+  width: 93%;
   padding: 0.8rem;
   font-size: 1rem;
   border: 1px solid #ccc;
@@ -419,24 +361,6 @@ input[type="text"].default-border {
   flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
-}
-
-.success-message {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 1rem;
-  background-color: #4caf50;
-  color: white;
-  border-radius: 8px;
-  z-index: 1000;
-  display: none;
-  transition: opacity 0.3s ease;
-}
-
-.success-message.show {
-  display: block;
-  opacity: 1;
 }
 
 .rating-button {
@@ -467,10 +391,12 @@ input[type="text"].default-border {
 }
 
 .nav-btn {
-  flex: 1; /* Make all buttons take equal width */
+  flex: 1;
+  margin-left: 0.5rem;
   padding: 14px 20px;
   font-size: 1.1rem;
   font-weight: 600;
+  max-width: 94%;
   color: #fff;
   background: #f26822;
   border: none;
@@ -513,7 +439,6 @@ input[type="text"].default-border {
   box-shadow: 0 0 0 3px rgba(242, 104, 34, 0.5);
 }
 
-
 .button-row {
   display: flex;
   justify-content: space-between; /* Ensures buttons are spaced apart */
@@ -523,7 +448,7 @@ input[type="text"].default-border {
 
 .option {
   flex: 1 1 auto;
-  min-width: 100px;
+  min-width: 50px;
   padding: 0.6rem;
   border-radius: 8px;
   background-color: #f0f0f0;
@@ -548,20 +473,6 @@ input[type="text"].default-border {
   color: white;
 }
 
-.history-btn {
-  margin-top: 2rem;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: #f26822;
-  color: white;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-/* Media Queries for Mobile and Tablet */
 @media (max-width: 768px) {
   h2 {
     font-size: 1.4rem;
@@ -583,22 +494,45 @@ input[type="text"].default-border {
 @media (max-width: 768px) {
   .rating-button {
     width: 30px;
-    /* Adjust width for smaller screens */
     height: 30px;
-    /* Adjust height for smaller screens */
     font-size: 0.9rem;
-    /* Reduce font size on smaller screens */
   }
 }
 
 @media (max-width: 480px) {
   .rating-button {
     width: 28px;
-    /* Even smaller for mobile screens */
     height: 28px;
-    /* Even smaller for mobile screens */
     font-size: 0.8rem;
-    /* Reduce font size further */
+  }
+}
+
+h2 {
+  text-align: center;
+  color: #f26822;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+h3 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.question {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  h2 {
+    font-size: 1.4rem;
   }
 }
 </style>

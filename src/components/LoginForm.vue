@@ -80,8 +80,16 @@ export default {
         if (response.data.message === 'Login successful') {
           console.log("/*/*/*/*/");
           localStorage.setItem('authToken', 'true');
-          this.$router.push('/survey');
-        } else {
+          console.log(response)
+          const userName = response.data.user?.name || response.data.name;
+          console.log(userName);
+          if (userName) {
+            localStorage.setItem('userName', userName);
+          }
+
+          this.$router.push('/surveys');
+        }
+        else {
           this.error = 'Login failed. Please check your credentials and try again.';
         }
       } catch (err) {

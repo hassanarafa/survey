@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Login from '@/views/LoginView.vue';
 import Survey from '@/views/SurveyView.vue';
-import UserAnswer from "@/views/UserAnswers.vue"
+import UserAnswer from "@/views/UserAnswers.vue";
+import SubmissionDetails from "@/components/SubmissionDetail.vue"
+import SurveyList from "@/components/SurveyList.vue"
 
 const routes = [
     {
@@ -10,16 +12,28 @@ const routes = [
         component: Login,
     },
     {
-        path: '/survey',
+        path: '/survey/:id',
         name: 'survey',
         component: Survey,
+        props: true,  // This will pass the parameters as props to the component
     },
     {
         path: '/userAnswer/:userId/:surveyId',
         name: 'userAnswer',
         component: UserAnswer,
         props: true,  // This will pass the parameters as props to the component
-    }
+    },
+    {
+        path: '/submission/:id',
+        name: 'SubmissionDetails',
+        component: SubmissionDetails,
+        props: true
+    },
+    {
+        path: '/surveys',
+        name: 'SurveyList',
+        component: SurveyList
+    },
 ];
 
 const router = createRouter({
@@ -32,7 +46,7 @@ router.beforeEach((to, from, next) => {
 
     if (to.path === '/' && isAuthenticated) {
         // If user tries to go to Login page while authenticated, redirect to Home
-        next('/survey')
+        next('/surveys')
     } else if (to.path !== '/' && !isAuthenticated) {
         // If user tries to access any page without logging in, redirect to Login
         next('/')
