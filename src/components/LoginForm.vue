@@ -74,7 +74,6 @@ export default {
           password: this.password,
         });
 
-        // Log the response to check if it's successful
         console.log('Login response:', response);
 
         if (response.data.message === 'Login successful') {
@@ -82,14 +81,18 @@ export default {
           localStorage.setItem('authToken', 'true');
           console.log(response)
           const userName = response.data.user?.name || response.data.name;
+          const userId = response.data.user?.id || "";
           console.log(userName);
+          console.log(userId);
           if (userName) {
             localStorage.setItem('userName', userName);
           }
+          if (userId) {
+            localStorage.setItem('userId', userId);
+          }
 
           this.$router.push('/surveys');
-        }
-        else {
+        } else {
           this.error = 'Login failed. Please check your credentials and try again.';
         }
       } catch (err) {

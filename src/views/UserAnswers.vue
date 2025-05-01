@@ -2,12 +2,10 @@
   <div class="user-answers">
     <h2>Your Submitted Answers</h2>
 
-    <!-- Loading Spinner -->
     <div v-if="loading" class="spinner-container">
       <div class="spinner"></div>
     </div>
 
-    <!-- Submissions Table -->
     <div v-else-if="userAnswers?.length">
       <table class="submission-table">
         <thead>
@@ -43,7 +41,6 @@
       </table>
     </div>
 
-    <!-- No Submissions -->
     <div v-else class="no-submissions">
       <p>No submissions found yet.</p>
     </div>

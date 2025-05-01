@@ -116,7 +116,7 @@ export default {
       successMessage: "",
       currentPage: 1,
       totalPages: 0,
-      user_id: 5,
+      user_id: localStorage.getItem("userId") || 0,
       store_id: 1,
       customer_name: "John Doe",
       customer_phone: "0123456789",

@@ -2,18 +2,15 @@
   <div class="navbar-content" @click="closeSidebar">
     <p class="brand">Employee Management System</p>
 
-    <!-- Hamburger Icon (Always Visible) -->
     <div class="hamburger" @click.stop="toggleMenu">
       <span class="icon-bar"></span>
       <span class="icon-bar"></span>
       <span class="icon-bar"></span>
     </div>
 
-    <!-- Sidebar Menu -->
     <div :class="['sidebar', { open: menuOpen }]">
       <div class="sidebar-content">
         <p @click="navigateAndClose('/survey')">Survey</p>
-        <!-- Logout Button -->
         <p @click="logout" class="logout">Log Out</p>
       </div>
     </div>
@@ -77,7 +74,6 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
-/* Hamburger Icon */
 .hamburger {
   display: flex;
   flex-direction: column;
@@ -92,7 +88,6 @@ onBeforeUnmount(() => {
   border-radius: 2px;
 }
 
-/* Sidebar */
 .sidebar {
   position: fixed;
   left: -260px;
@@ -134,7 +129,6 @@ onBeforeUnmount(() => {
   color: white;
 }
 
-/* Logout Button */
 .logout {
   color: #f26822;
   font-weight: bold;
@@ -146,7 +140,6 @@ onBeforeUnmount(() => {
   background-color: #f26822;
 }
 
-/* Responsive — Sidebar always triggered with hamburger */
 @media (min-width: 769px) {
   .sidebar {
     width: 250px;
