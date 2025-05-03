@@ -8,9 +8,16 @@
 
     <div v-else-if="submissionData">
       <div class="meta-info">
-        <div class="badge"><strong>Store:</strong> {{ storeName }}</div>
-        <div class="badge"><strong>Guest:</strong> {{ guestName }} - {{ guestContact }}</div>
-        <div class="badge"><strong>Date:</strong> {{ submissionData.submission_date }}</div>
+        <div class="badge">
+          <strong>Store:</strong>
+          {{ storeData?.store_name || 'N/A' }} ({{ storeData?.store_code || 'N/A' }})
+        </div>
+        <div class="badge">
+          <strong>Guest:</strong> {{ guestName }} - {{ guestContact }}
+        </div>
+        <div class="badge">
+          <strong>Date:</strong> {{ submissionData.submitted_at }}
+        </div>
       </div>
 
       <div class="answers-grid">
@@ -21,12 +28,21 @@
         >
           <div class="question">{{ answer.question.trim() }}</div>
           <div class="answer">
-            <div v-if="Array.isArray(answer.answers)">
-              <div v-for="(a, i) in answer.answers" :key="i">{{ a.answer_text || "No Answer" }}</div>
-            </div>
-            <div v-else>
+            <template v-if="Array.isArray(answer.answers)">
+              <div
+                  v-for="(a, i) in answer.answers"
+                  :key="i"
+              >
+                <span v-if="a.answer_text">{{ a.answer_text }}</span>
+                <span v-else-if="a.store_name">
+                  {{ a.store_name }} ({{ a.store_code }})
+                </span>
+                <span v-else>No Answer</span>
+              </div>
+            </template>
+            <template v-else>
               {{ answer.answers?.answer_text || "No Answer" }}
-            </div>
+            </template>
           </div>
         </div>
       </div>
@@ -50,50 +66,74 @@ export default {
   },
   computed: {
     guestName() {
-      return this.getAnswerByQuestion('Guest Name');
+      return this.getAnswerText('Guest Name');
     },
     guestContact() {
-      return this.getAnswerByQuestion('Guest Contact no');
+      return this.getAnswerText('Guest Contact no');
     },
-    storeName() {
-      return this.getAnswerByQuestion('Store Code and Store Name');
+    storeData() {
+      const answer = this.submissionData?.answers.find(a =>
+          a.question.trim().startsWith('Store Code and Store Name')
+      );
+      return answer && Array.isArray(answer.answers) ? answer.answers[0] : null;
     },
   },
   methods: {
     async fetchSubmissionDetails() {
-      console.log(localStorage.getItem('survey_id') +" "+ localStorage.getItem("userId"))
-      const submissionId = localStorage.getItem('survey_id');
-      if (!submissionId) {
-        console.error('Submission ID not found');
+      const surveyId = localStorage.getItem('survey_id');
+      const userId = localStorage.getItem('userId');
+      const submissionId = localStorage.getItem('submission_id');
+
+      if (!surveyId || !userId || !submissionId) {
+        console.error('Missing required data in localStorage');
+        this.loading = false;
         return;
       }
 
+      console.log(userId);
+      console.log(surveyId);
+      console.log(submissionId);
       try {
         const res = await axios.post(
-            "https://survey.dd-ops.com/api/get_UserAnswers",
+            "https://survey.dd-ops.com/api/submission-details",
             {
-              user_id: localStorage.getItem("userId") || 0,
-              survey_id: submissionId,
+              user_id: userId,
+              survey_id: surveyId,
+              submission_id: submissionId,
             },
             {
-              headers: {"Content-Type": "application/json"},
+              headers: { "Content-Type": "application/json" },
             }
         );
-        this.submissionData = res.data?.[0] || null;
+
+        const data = res.data;
+
+        if (data && Array.isArray(data)) {
+          this.submissionData = data[0] || null;
+        } else if (data && typeof data === 'object') {
+          this.submissionData = data;
+        } else {
+          console.error('Unexpected response structure:', data);
+          this.submissionData = null;
+        }
+
       } catch (error) {
         console.error("Error fetching submission:", error);
         this.submissionData = null;
       } finally {
         this.loading = false;
       }
+
     },
-    getAnswerByQuestion(questionText) {
+    getAnswerText(questionPrefix) {
       if (!this.submissionData) return '';
-      const found = this.submissionData.answers.find(ans =>
-          ans.question.trim().startsWith(questionText)
+      const answer = this.submissionData.answers.find(q =>
+          q.question.trim().startsWith(questionPrefix)
       );
-      return found ? (found.answer_text || found.answer_choice || '') : '';
-    }
+      return answer && answer.answers?.[0]?.answer_text
+          ? answer.answers[0].answer_text.trim()
+          : '';
+    },
   },
   created() {
     this.fetchSubmissionDetails();

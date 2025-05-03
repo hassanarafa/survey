@@ -20,7 +20,7 @@
         <tbody>
         <tr v-for="submission in userAnswers" :key="submission.submission_id">
           <td>{{ formatDateTime(submission.submission_date) }}</td>
-          <td>{{ getStoreName(submission) }} ({{ getStoreCode(submission) }})</td>
+          <td>{{ getStoreCode(submission) }} - {{ getStoreName(submission) }}</td>
           <td>{{ getGuestName(submission) }}</td>
           <td>{{ getGuestContact(submission) }}</td>
 
@@ -90,17 +90,18 @@ export default {
     },
 
     getStoreAnswer(sub) {
+      console.log(sub?.answers?.find(ans => ans.question.trim() === "Store Code and Store Name"))
       return sub?.answers?.find(ans => ans.question.trim() === "Store Code and Store Name");
     },
 
     getStoreCode(sub) {
-      const answer = this.getStoreAnswer(sub)?.answers[0]?.answer_text;
+      const answer = this.getStoreAnswer(sub)?.answers[0]?.store_code;
       return answer ? answer.split(" - ")[0]?.trim() || 'N/A' : 'N/A';
     },
 
     getStoreName(sub) {
-      const answer = this.getStoreAnswer(sub)?.answers[0]?.answer_text;
-      return answer ? answer.split(" - ")[1]?.trim() || 'N/A' : 'N/A';
+      const answer = this.getStoreAnswer(sub)?.answers[0]?.store_name;
+      return answer ? answer.split(" - ")[0]?.trim() || 'N/A' : 'N/A';
     },
 
     getGuestName(sub) {
@@ -114,7 +115,8 @@ export default {
     },
 
     saveSubmissionId(id) {
-      localStorage.setItem('survey_id', id);
+      localStorage.setItem('submission_id', id);
+      localStorage.setItem('survey_id', this.surveyId);
     }
   }
 };
