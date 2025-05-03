@@ -27,6 +27,8 @@
 </template>
 
 <script>
+import api from '@/services/axios.js'; // Import the api service
+
 export default {
   data() {
     return {
@@ -34,16 +36,19 @@ export default {
       isSurveySelected: false,
       successMessage: "",
       currentSurveyId: null,
+      loading: false,
     };
   },
   methods: {
     async fetchSurveys() {
+      this.loading = true;
       try {
-        const response = await fetch('https://survey.dd-ops.com/api/get_surveys');
-        const data = await response.json();
-        this.surveys = data;
+        const response = await api.get('get_surveys'); // Use the Axios instance to make the GET request
+        this.surveys = response.data;
       } catch (error) {
         console.error('Error fetching surveys:', error);
+      } finally {
+        this.loading = false;
       }
     },
     viewSurveyQuestions(surveyId) {
@@ -52,15 +57,8 @@ export default {
       this.$router.push({name: 'survey', params: {id: surveyId}});
     },
     viewHistory(surveyId) {
-      const userId = 5;
+      const userId = localStorage.getItem("userId") || 0;
       this.$router.push({name: 'userAnswer', params: {userId, surveyId}});
-    },
-    handlePopState() {
-      history.pushState(null, null, location.href);
-    },
-    preventBackNavigation() {
-      history.pushState(null, null, location.href);
-      window.addEventListener('popstate', this.handlePopState);
     },
   },
   mounted() {
@@ -75,10 +73,6 @@ export default {
     }
 
     this.fetchSurveys();
-    this.preventBackNavigation();
-  },
-  beforeUnmount() {
-    window.removeEventListener('popstate', this.handlePopState);
   },
 };
 </script>

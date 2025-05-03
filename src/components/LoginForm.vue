@@ -74,30 +74,26 @@ export default {
           password: this.password,
         });
 
-        console.log('Login response:', response);
+        if (response.data.token) {
+          const token = response.data.token;
 
-        if (response.data.message === 'Login successful') {
-          console.log("/*/*/*/*/");
-          localStorage.setItem('authToken', 'true');
-          console.log(response)
+          // Save JWT to localStorage
+          localStorage.setItem('authToken', token);
+
+          // Save user info if needed
           const userName = response.data.user?.name || response.data.name;
           const userId = response.data.user?.id || "";
-          console.log(userName);
-          console.log(userId);
-          if (userName) {
-            localStorage.setItem('userName', userName);
-          }
-          if (userId) {
-            localStorage.setItem('userId', userId);
-          }
 
+          if (userName) localStorage.setItem('userName', userName);
+          if (userId) localStorage.setItem('userId', userId);
+
+          // Redirect
           this.$router.push('/surveys');
         } else {
           this.error = 'Login failed. Please check your credentials and try again.';
         }
       } catch (err) {
-        // Log the error to check if there's an issue with the request
-        console.error('Error during login:', err);
+        console.error('Login error:', err);
         this.error = 'Login failed. Please check your credentials and try again.';
       }
     },

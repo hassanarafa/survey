@@ -21,7 +21,12 @@
         >
           <div class="question">{{ answer.question.trim() }}</div>
           <div class="answer">
-            {{ answer.answer_text || answer.answer_choice || "No Answer" }}
+            <div v-if="Array.isArray(answer.answers)">
+              <div v-for="(a, i) in answer.answers" :key="i">{{ a.answer_text || "No Answer" }}</div>
+            </div>
+            <div v-else>
+              {{ answer.answers?.answer_text || "No Answer" }}
+            </div>
           </div>
         </div>
       </div>
@@ -66,7 +71,7 @@ export default {
         const res = await axios.post(
             "https://survey.dd-ops.com/api/get_UserAnswers",
             {
-              user_id: 5,
+              user_id: localStorage.getItem("userId") || 0,
               survey_id: submissionId,
             },
             {

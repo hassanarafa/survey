@@ -12,8 +12,8 @@
         <tr>
           <th>Date & Time</th>
           <th>Store</th>
-          <th>Customer Name</th>
-          <th>Customer Number</th>
+          <th>Guest Name</th>
+          <th>Guest Contact</th>
           <th>Actions</th>
         </tr>
         </thead>
@@ -31,7 +31,7 @@
                   params: { id: submission.submission_id },
                   state: { submission }
                 }"
-                @click="saveSubmissionId(surveyId)"
+                @click="saveSubmissionId(submission.submission_id)"
             >
               <button>View Answers</button>
             </router-link>
@@ -64,13 +64,10 @@ export default {
   methods: {
     async fetchUserHistory() {
       try {
-        console.log(this.userId);
-        console.log(this.surveyId);
         const res = await axios.post("https://survey.dd-ops.com/api/get_UserAnswers", {
           user_id: this.userId,
           survey_id: this.surveyId,
         });
-        console.log(res.data);
         this.userAnswers = Array.isArray(res.data) ? res.data : [];
       } catch (error) {
         console.error("Error fetching submission history:", error);
@@ -97,23 +94,23 @@ export default {
     },
 
     getStoreCode(sub) {
-      const answer = this.getStoreAnswer(sub)?.answer_text;
+      const answer = this.getStoreAnswer(sub)?.answers[0]?.answer_text;
       return answer ? answer.split(" - ")[0]?.trim() || 'N/A' : 'N/A';
     },
 
     getStoreName(sub) {
-      const answer = this.getStoreAnswer(sub)?.answer_text;
+      const answer = this.getStoreAnswer(sub)?.answers[0]?.answer_text;
       return answer ? answer.split(" - ")[1]?.trim() || 'N/A' : 'N/A';
     },
 
     getGuestName(sub) {
-      return sub?.answers?.find(a => a.question.trim() === "Guest Name")?.answer_text?.trim() || "N/A";
+      return sub?.answers?.find(a => a.question.trim() === "Guest Name")?.answers[0]?.answer_text?.trim() || "N/A";
     },
 
     getGuestContact(sub) {
       return sub?.answers?.find(a =>
           a.question.trim().toLowerCase().startsWith("guest contact")
-      )?.answer_text?.trim() || "N/A";
+      )?.answers[0]?.answer_text?.trim() || "N/A";
     },
 
     saveSubmissionId(id) {
@@ -155,8 +152,12 @@ h2 {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .submission-table {
