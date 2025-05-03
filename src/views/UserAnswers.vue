@@ -113,8 +113,8 @@ export default {
       )?.answers[0]?.answer_text?.trim() || "N/A";
     },
 
-    saveSubmissionId() {
-      localStorage.setItem('survey_id', this.surveyId);
+    saveSubmissionId(id) {
+      localStorage.setItem('survey_id', id);
     }
   }
 };

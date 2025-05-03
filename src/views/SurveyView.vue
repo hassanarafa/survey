@@ -74,7 +74,7 @@
                 :searchable="true"
                 placeholder="Select an option"
                 :allow-empty="true"
-                :multiple="true"
+                :multiple="false"
             />
           </div>
 
@@ -141,9 +141,11 @@ export default {
   },
   computed: {
     filteredQuestions() {
-      return this.survey.pages[this.currentPage] || [];
-    },
+      const questions = this.survey.pages[this.currentPage] || [];
+      return questions.filter(q => this.shouldShowQuestion(q));
+    }
   },
+
   mounted() {
     const surveyId = this.$route.params.id;
     this.fetchSurvey(surveyId);
@@ -214,18 +216,30 @@ export default {
       if (this.isSubmitting) return;
       this.isSubmitting = true;
 
+      // Find the "Store Code and Store Name" question ID
+      const storeQuestion = Object.values(this.survey.pages).flat().find(
+          q => q.question_text.trim().toLowerCase() === "store code and store name"
+      );
+
+
+      // Dynamically set store_id based on selected option
+      if (storeQuestion && this.answers[storeQuestion.id]) {
+        const selectedStore = this.answers[storeQuestion.id];
+        console.log(storeQuestion.id);
+        if (typeof selectedStore === 'object' && selectedStore.id) {
+          this.store_id = selectedStore.id;
+        }
+      }
+      console.log(this.store_id);
+
       const answersPayload = Object.entries(this.answers).map(([id, value]) => {
         const parsedId = +id;
         let answerValue = value;
 
-        // If the value is an array (e.g., checkboxes or multi-select dropdown)
         if (Array.isArray(value)) {
           const ids = value.map(v => (typeof v === 'object' && v !== null && 'id' in v ? v.id : v));
           answerValue = ids.length === 1 ? ids[0] : ids;
-        }
-
-        // If the value is a single object (e.g., dropdown)
-        else if (typeof value === 'object' && value !== null && 'id' in value) {
+        } else if (typeof value === 'object' && value !== null && 'id' in value) {
           answerValue = value.id;
         }
 
@@ -265,8 +279,30 @@ export default {
       } finally {
         this.isSubmitting = false;
       }
-    }
+    },
 
+    shouldShowQuestion(question) {
+      if (question.question_text === 'If "No", reason for not recommending') {
+        const related = Object.values(this.survey.pages).flat().find(
+            q => q.question_text?.trim().toLowerCase() === "recommend promotion or award?".toLowerCase()
+        );
+        if (!related || !this.answers[related.id]) return false;
+
+        const selectedOption = related.answers.find(opt => opt.id === this.answers[related.id]);
+        return selectedOption?.label?.trim().toLowerCase() === "no";
+      }
+
+      if (question.question_text === "if no What's is the main reason you don't want to recommend us?") {
+        const related = Object.values(this.survey.pages).flat().find(
+            q => q.question_text?.trim().toLowerCase() === "would you recommend this to your friends/family? ( yes or no)".toLowerCase()
+        );
+        if (!related || !this.answers[related.id]) return false;
+
+        const selectedOption = related.answers.find(opt => opt.id === this.answers[related.id]);
+        return selectedOption?.label?.trim().toLowerCase() === "no";
+      }
+      return true;
+    }
 
   },
 };
