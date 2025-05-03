@@ -61,6 +61,7 @@ export default {
   },
   methods: {
     async fetchSubmissionDetails() {
+      console.log(localStorage.getItem('survey_id') +" "+ localStorage.getItem("userId"))
       const submissionId = localStorage.getItem('survey_id');
       if (!submissionId) {
         console.error('Submission ID not found');
