@@ -108,7 +108,8 @@
         <button v-if="currentPage < totalPages" class="nav-btn" @click="goToNextPage" :disabled="!isPageValid()">
           Next
         </button>
-        <button v-if="currentPage === totalPages" class="nav-btn submit-btn" @click="submitSurvey" :disabled="!isFormValid()">
+        <button v-if="currentPage === totalPages" class="nav-btn submit-btn" @click="submitSurvey"
+                :disabled="!isFormValid()">
           Submit Survey
         </button>
       </div>
@@ -121,10 +122,10 @@ import axios from "axios";
 import Multiselect from "vue-multiselect";
 
 export default {
-  components: { Multiselect },
+  components: {Multiselect},
   data() {
     return {
-      survey: { id: null, title: "", description: "", pages: {} },
+      survey: {id: null, title: "", description: "", pages: {}},
       answers: {},
       isSurveySelected: false,
       currentPage: 1,
@@ -237,8 +238,7 @@ export default {
         let answerValue = value;
 
         if (Array.isArray(value)) {
-          const ids = value.map(v => (typeof v === 'object' && v !== null && 'id' in v ? v.id : v));
-          answerValue = ids.length === 1 ? ids[0] : ids;
+          answerValue = value.map(v => (typeof v === 'object' && v !== null && 'id' in v ? v.id : v));
         } else if (typeof value === 'object' && value !== null && 'id' in value) {
           answerValue = value.id;
         }
@@ -264,7 +264,7 @@ export default {
         const res = await axios.post(
             "https://survey.dd-ops.com/api/store_submissions",
             payload,
-            { headers: { "Content-Type": "application/json" } }
+            {headers: {"Content-Type": "application/json"}}
         );
 
         if ([200, 201].includes(res.status)) {
@@ -272,7 +272,7 @@ export default {
           sessionStorage.setItem("surveySuccessMessage", this.successMessage);
           this.answers = {};
           this.isSurveySelected = false;
-          this.$router.push({ name: "SurveyList" });
+          this.$router.push({name: "SurveyList"});
         }
       } catch (err) {
         console.error("Submission error:", err);
@@ -330,7 +330,6 @@ export default {
 }
 
 
-
 .question {
   margin-bottom: 20px;
   padding: 15px;
@@ -366,7 +365,7 @@ export default {
   border-radius: 8px;
 }
 
-.pagNum{
+.pagNum {
   color: #f26822;
   margin-left: 20px;
 }
@@ -578,8 +577,12 @@ h2 {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 h3 {
