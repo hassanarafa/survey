@@ -29,7 +29,6 @@
                 :to="{
                   name: 'SubmissionDetails',
                   params: { id: submission.submission_id },
-                  state: { submission }
                 }"
                 @click="saveSubmissionId(submission.submission_id)"
             >
@@ -115,8 +114,10 @@ export default {
     },
 
     saveSubmissionId(id) {
+      const submission = this.userAnswers.find(s => s.submission_id === id);
       localStorage.setItem('submission_id', id);
       localStorage.setItem('survey_id', this.surveyId);
+      localStorage.setItem('submission_data', JSON.stringify(submission));
     }
   }
 };

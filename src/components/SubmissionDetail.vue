@@ -6,137 +6,99 @@
       <div class="spinner"></div>
     </div>
 
-    <div v-else-if="submissionData">
+    <div v-else-if="submission">
       <div class="meta-info">
         <div class="badge">
-          <strong>Store:</strong>
-          {{ storeData?.store_name || 'N/A' }} ({{ storeData?.store_code || 'N/A' }})
+          <strong>Store:</strong> {{ getStoreName(submission) }} ({{ getStoreCode(submission) }})
         </div>
         <div class="badge">
-          <strong>Guest:</strong> {{ guestName }} - {{ guestContact }}
-        </div>
-        <div class="badge">
-          <strong>Date:</strong> {{ submissionData.submitted_at }}
+          <strong>Guest:</strong> {{ getGuestName(submission) }} - {{ getGuestContact(submission) }}
         </div>
       </div>
 
       <div class="answers-grid">
         <div
-            v-for="(answer, index) in submissionData.answers"
+            v-for="(answerGroup, index) in submission.answers"
             :key="index"
             class="answer-card"
         >
-          <div class="question">{{ answer.question.trim() }}</div>
+          <div class="question">{{ answerGroup.question }}</div>
           <div class="answer">
-            <template v-if="Array.isArray(answer.answers)">
-              <div
-                  v-for="(a, i) in answer.answers"
-                  :key="i"
-              >
-                <span v-if="a.answer_text">{{ a.answer_text }}</span>
-                <span v-else-if="a.store_name">
-                  {{ a.store_name }} ({{ a.store_code }})
-                </span>
-                <span v-else>No Answer</span>
-              </div>
-            </template>
-            <template v-else>
-              {{ answer.answers?.answer_text || "No Answer" }}
-            </template>
+            <div
+                v-for="(a, i) in answerGroup.answers"
+                :key="i"
+            >
+              <span v-if="a.answer_text">{{ a.answer_text }}</span>
+              <span v-else-if="a.store_name">
+                {{ a.store_name }} ({{ a.store_code }})
+              </span>
+              <span v-else>No Answer</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <div v-else>
-      <p class="error-msg">⚠️ No data found. Please go back and try again.</p>
+      <p class="error-msg">⚠️ No submission data available.</p>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
-
 export default {
   data() {
     return {
-      submissionData: null,
+      submission: null,
       loading: true,
     };
   },
-  computed: {
-    guestName() {
-      return this.getAnswerText('Guest Name');
-    },
-    guestContact() {
-      return this.getAnswerText('Guest Contact no');
-    },
-    storeData() {
-      const answer = this.submissionData?.answers.find(a =>
-          a.question.trim().startsWith('Store Code and Store Name')
-      );
-      return answer && Array.isArray(answer.answers) ? answer.answers[0] : null;
-    },
+  created() {
+    this.loadSubmission();
   },
   methods: {
-    async fetchSubmissionDetails() {
-      const surveyId = localStorage.getItem('survey_id');
-      const userId = localStorage.getItem('userId');
-      const submissionId = localStorage.getItem('submission_id');
-
-      if (!surveyId || !userId || !submissionId) {
-        console.error('Missing required data in localStorage');
-        this.loading = false;
-        return;
-      }
-
-      console.log(userId);
-      console.log(surveyId);
-      console.log(submissionId);
+    loadSubmission() {
       try {
-        const res = await axios.post(
-            "https://survey.dd-ops.com/api/submission-details",
-            {
-              user_id: userId,
-              survey_id: surveyId,
-              submission_id: submissionId,
-            },
-            {
-              headers: { "Content-Type": "application/json" },
-            }
-        );
-
-        const data = res.data;
-
-        if (data && Array.isArray(data)) {
-          this.submissionData = data[0] || null;
-        } else if (data && typeof data === 'object') {
-          this.submissionData = data;
-        } else {
-          console.error('Unexpected response structure:', data);
-          this.submissionData = null;
+        const storedData = localStorage.getItem("submission_data");
+        if (storedData) {
+          const parsed = JSON.parse(storedData);
+          if (parsed.submission_id == this.$route.params.id) {
+            this.submission = parsed;
+          }
         }
-
-      } catch (error) {
-        console.error("Error fetching submission:", error);
-        this.submissionData = null;
+      } catch (e) {
+        console.error("Error loading submission from storage:", e);
       } finally {
         this.loading = false;
       }
+    },
 
-    },
-    getAnswerText(questionPrefix) {
-      if (!this.submissionData) return '';
-      const answer = this.submissionData.answers.find(q =>
-          q.question.trim().startsWith(questionPrefix)
+    getStoreAnswer(sub) {
+      return sub?.answers?.find(
+          (ans) => ans.question.trim() === "Store Code and Store Name"
       );
-      return answer && answer.answers?.[0]?.answer_text
-          ? answer.answers[0].answer_text.trim()
-          : '';
     },
-  },
-  created() {
-    this.fetchSubmissionDetails();
+    getStoreCode(sub) {
+      const answer = this.getStoreAnswer(sub)?.answers[0]?.store_code;
+      return answer ? answer.split(" - ")[0]?.trim() || "N/A" : "N/A";
+    },
+    getStoreName(sub) {
+      const answer = this.getStoreAnswer(sub)?.answers[0]?.store_name;
+      return answer ? answer.split(" - ")[1]?.trim() || "N/A" : "N/A";
+    },
+    getGuestName(sub) {
+      return (
+          sub?.answers?.find((a) => a.question.trim() === "Guest Name")?.answers[0]
+              ?.answer_text?.trim() || "N/A"
+      );
+    },
+    getGuestContact(sub) {
+      return (
+          sub?.answers?.find((a) =>
+              a.question.trim().toLowerCase().startsWith("guest contact")
+          )?.answers[0]?.answer_text?.trim() || "N/A"
+      );
+    },
   },
 };
 </script>
