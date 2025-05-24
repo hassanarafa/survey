@@ -10,8 +10,7 @@
             id="email"
             v-model="email"
             placeholder="Enter your email"
-            :class="{'invalid': emailError}"
-        />
+            :class="{'invalid': emailError}"/>
         <p v-if="emailError" class="error-message">{{ emailError }}</p>
 
         <label for="password">Password</label>
@@ -21,8 +20,7 @@
             id="password"
             v-model="password"
             placeholder="Enter your password"
-            :class="{'invalid': passwordError}"
-        />
+            :class="{'invalid': passwordError}"/>
         <p v-if="passwordError" class="error-message">{{ passwordError }}</p>
       </div>
 
@@ -34,7 +32,8 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/services/axios.js";
+import Cookies from 'js-cookie'; // ✅ use 'js-cookie', not 'cookie-js'
 
 export default {
   data() {
@@ -69,25 +68,28 @@ export default {
       }
 
       try {
-        const response = await axios.post('https://survey.dd-ops.com/api/login', {
+        const response = await api.post('login', {
           email: this.email,
           password: this.password,
         });
 
         if (response.data.token) {
           const token = response.data.token;
+          const originalToken = token;
 
-          // Save JWT to localStorage
-          localStorage.setItem('authToken', token);
+          Cookies.set('authToken', token, { expires: 7 });
+          Cookies.set('originalToken', originalToken, { expires: 7 });
 
-          // Save user info if needed
-          const userName = response.data.user?.name || response.data.name;
-          const userId = response.data.user?.id || "";
+          const userName = response.data.user?.name || '';
+          const userId = response.data.user?.id || '';
 
           if (userName) localStorage.setItem('userName', userName);
           if (userId) localStorage.setItem('userId', userId);
 
-          // Redirect
+          console.log(userName)
+          console.log(userId)
+
+          console.log(this.$router.push('/surveys'))
           this.$router.push('/surveys');
         } else {
           this.error = 'Login failed. Please check your credentials and try again.';

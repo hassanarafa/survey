@@ -11,6 +11,7 @@
     <div :class="['sidebar', { open: menuOpen }]">
       <div class="sidebar-content">
         <p @click="navigateAndClose('/surveys')">Survey</p>
+        <p @click="navigateAndClose('/dashboard')">DashBoard</p>
         <p @click="logout" class="logout">Log Out</p>
       </div>
     </div>

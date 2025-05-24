@@ -38,6 +38,29 @@
               :class="{ 'has-data': answers[question.id] }"
           />
 
+          <input
+              v-else-if="question.question_type === 'numeric_text'"
+              v-model.number="answers[question.id]"
+              :id="'question-' + question.id"
+              type="number"
+              placeholder="Enter a number"
+              :class="{ 'has-data': answers[question.id] }"
+          />
+
+          <div
+              v-else-if="question.question_type === 'no_dependence'"
+              class="flex gap-2 mt-2"
+          >
+            <div
+                v-for="option in ['Yes', 'No']"
+                :key="option"
+                :class="['optionCondition', answers[question.id] === option ? 'selected' : '',]"
+                @click="answers[question.id] = option"
+            >
+              <span>{{ option }}</span>
+            </div>
+          </div>
+
           <div v-else-if="question.question_type === 'rating'" class="rating-scale">
             <button
                 v-for="n in 10"
@@ -118,7 +141,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "@/services/axios.js";
 import Multiselect from "vue-multiselect";
 
 export default {
@@ -162,13 +185,13 @@ export default {
 
     async fetchSurvey(surveyId) {
       try {
-        const res = await fetch(`https://survey.dd-ops.com/api/survey/${surveyId}`);
-        const data = await res.json();
-        this.survey = data;
-        this.totalPages = Object.keys(data.pages).length;
+        const res = await api.get(`survey/${surveyId}`);
+        this.survey = res.data;
+        this.totalPages = Object.keys(res.data.pages).length;
         this.answers = {};
         this.currentPage = 1;
         this.isSurveySelected = true;
+
         Object.values(this.survey.pages).flat().forEach(q => {
           if (q.question_text === "Manager Name") {
             this.answers[q.id] = this.managerName;
@@ -261,11 +284,7 @@ export default {
       console.log("Submitting payload:", payload);
 
       try {
-        const res = await axios.post(
-            "https://survey.dd-ops.com/api/store_submissions",
-            payload,
-            {headers: {"Content-Type": "application/json"}}
-        );
+        const res = await api.post("store_submissions", payload);
 
         if ([200, 201].includes(res.status)) {
           this.successMessage = "Survey submitted successfully!";
@@ -282,20 +301,12 @@ export default {
     },
 
     shouldShowQuestion(question) {
-      if (question.question_text === 'If "No", reason for not recommending') {
-        const related = Object.values(this.survey.pages).flat().find(
-            q => q.question_text?.trim().toLowerCase() === "recommend promotion or award?".toLowerCase()
-        );
-        if (!related || !this.answers[related.id]) return false;
-
-        const selectedOption = related.answers.find(opt => opt.id === this.answers[related.id]);
-        return selectedOption?.label?.trim().toLowerCase() === "no";
-      }
-
-      if (question.question_text === "if no What's is the main reason you don't want to recommend us?") {
+      console.log(question.question_text);
+      if (question.question_text === "If No,What's is the main reason you don't want to recommend us?") {
         const related = Object.values(this.survey.pages).flat().find(
             q => q.question_text?.trim().toLowerCase() === "would you recommend this to your friends/family? ( yes or no)".toLowerCase()
         );
+
         if (!related || !this.answers[related.id]) return false;
 
         const selectedOption = related.answers.find(opt => opt.id === this.answers[related.id]);
@@ -303,7 +314,6 @@ export default {
       }
       return true;
     }
-
   },
 };
 </script>
@@ -311,24 +321,35 @@ export default {
 <style scoped>
 @import "~vue-multiselect/dist/vue-multiselect.min.css";
 
-.checkbox-group {
-  margin-top: 1rem;
+.optionCondition {
+  flex: 1;
+  width: 45%;
+  padding: 0.6rem;
+  justify-content: space-between;
+  margin: 5px;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+  text-align: center;
+  display: inline-block;
 }
 
-.checkbox-search-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
+.optionCondition span {
+  font-size: 1rem;
+  display: block;
 }
 
-.checkbox-option {
-  margin-bottom: 8px;
-  font-size: 14px;
+.optionCondition.selected {
+  background-color: #f26822;
+  color: white;
 }
 
+.optionCondition:hover {
+  background-color: #f26822;
+  transform: scale(1.05);
+  color: white;
+}
 
 .question {
   margin-bottom: 20px;
@@ -394,7 +415,7 @@ label {
   color: #f26822;
 }
 
-input[type="text"],
+input[type="text"],input[type="number"],
 select {
   width: 93%;
   padding: 0.8rem;
@@ -485,7 +506,7 @@ input[type="text"].default-border {
 }
 
 .submit-btn {
-  flex: 1; /* Make all buttons take equal width */
+  flex: 1;
   padding: 14px 20px;
   font-size: 1.1rem;
   font-weight: 600;
@@ -503,9 +524,9 @@ input[type="text"].default-border {
 
 .button-row {
   display: flex;
-  justify-content: space-between; /* Ensures buttons are spaced apart */
-  gap: 10px; /* Optional: Adds space between the buttons */
-  margin-top: 20px; /* Optional: Adds space above the buttons */
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 .option {

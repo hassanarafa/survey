@@ -1,58 +1,107 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import Cookies from 'js-cookie'; // ✅ use 'js-cookie', not 'cookie-js'
+
 import Login from '@/views/LoginView.vue';
 import Survey from '@/views/SurveyView.vue';
 import UserAnswer from "@/views/UserAnswers.vue";
-import SubmissionDetails from "@/components/SubmissionDetail.vue"
-import SurveyList from "@/components/SurveyList.vue"
+import SubmissionDetails from "@/components/SubmissionDetail.vue";
+import SurveyList from "@/components/SurveyList.vue";
+import DashBoard from "@/components/DashBoard.vue";
 
+// ✅ Token validation: checks structure and expiry
+function isTokenValid() {
+    const tokenFromCookies = Cookies.get('authToken'); // Get the authToken from cookies
+    const originalTokenFromCookies = Cookies.get('originalToken'); // Get the originalToken from cookies
+
+    if (!tokenFromCookies || !originalTokenFromCookies) {
+        console.warn('No token found in cookies');
+        return false;
+    }
+
+    try {
+        const payload = JSON.parse(atob(tokenFromCookies.split('.')[1])); // Decode the token
+        const now = Math.floor(Date.now() / 1000); // Get current time in seconds
+
+        // If the token is expired, return false
+        if (!payload.exp || payload.exp < now) {
+            console.warn('Token expired');
+            return false;
+        }
+
+        // If the original token in cookies doesn't match, return false
+        if (originalTokenFromCookies !== tokenFromCookies) {
+            console.warn('Original token mismatch');
+            return false;
+        }
+
+        return true;
+    } catch (e) {
+        console.error('Token decoding/parsing failed:', e);
+        return false;
+    }
+}
+
+// ✅ Routes
 const routes = [
-    {
-        path: '/',
-        name: 'login',
-        component: Login,
-    },
+    { path: '/', name: 'login', component: Login },
     {
         path: '/survey/:id',
         name: 'survey',
         component: Survey,
-        props: true,  // This will pass the parameters as props to the component
+        props: true,
+        // meta: { requiresAuth: true }
     },
     {
         path: '/userAnswer/:userId/:surveyId',
         name: 'userAnswer',
         component: UserAnswer,
-        props: true,  // This will pass the parameters as props to the component
+        props: true,
+        // meta: { requiresAuth: true }
     },
     {
         path: '/submission/:id',
         name: 'SubmissionDetails',
         component: SubmissionDetails,
-        props: true
+        props: true,
+        // meta: { requiresAuth: true }
     },
     {
         path: '/surveys',
         name: 'SurveyList',
-        component: SurveyList
+        component: SurveyList,
+        // meta: { requiresAuth: true }
     },
+    {
+        path: '/dashboard',
+        name: 'DashBoard',
+        component: DashBoard,
+        // meta: { requiresAuth: true }
+    }
 ];
 
+// ✅ Router
 const router = createRouter({
-    history: createWebHistory(process.env.BASE_URL),
-    routes,
+    history: createWebHistory(),
+    routes
 });
 
+// ✅ Navigation guard
 router.beforeEach((to, from, next) => {
-    const isAuthenticated = !!localStorage.getItem('authToken') // check if user is logged in
+    const token = Cookies.get('authToken'); // ✅ read from cookie
 
-    if (to.path === '/' && isAuthenticated) {
-        // If user tries to go to Login page while authenticated, redirect to Home
-        next('/surveys')
-    } else if (to.path !== '/' && !isAuthenticated) {
-        // If user tries to access any page without logging in, redirect to Login
-        next('/')
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+        if (isTokenValid(token)) {
+            next();
+        } else {
+            Cookies.remove('authToken');
+            next({
+                name: 'login',
+                query: { warning: 'Session expired or token was modified. Please log in again.' }
+            });
+        }
     } else {
-        next() // Otherwise allow navigation
+        next();
     }
-})
+});
 
 export default router;
