@@ -62,9 +62,12 @@ import {
   LineElement,
   PointElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
+  LineController, // ✅ Import LineController
+  BarController   // ✅ (optional) Explicitly import BarController for clarity
 } from 'chart.js'
 
+// ✅ Register all necessary components and controllers
 ChartJS.register(
     Title,
     Tooltip,
@@ -73,7 +76,9 @@ ChartJS.register(
     LineElement,
     PointElement,
     CategoryScale,
-    LinearScale
+    LinearScale,
+    LineController,
+    BarController
 )
 
 const topStoresChartData = ref(null)
@@ -114,62 +119,64 @@ const fetchZoneInsights = async () => {
   }
 }
 
+const createChartData = (data, labelKey) => {
+  const labels = data.map(item => item[labelKey] ?? 'Unknown')
+  const submissionCounts = data.map(item => parseInt(item.submission_count ?? 0))
+  const overallExperience = data.map(item => parseFloat(item.overall_experience ?? 0))
+  const valueForMoney = data.map(item => parseFloat(item.value_for_money ?? 0))
+  const recommendationScore = data.map(item => parseFloat(item.recommendation_score ?? 0))
+
+  return {
+    labels,
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Submission Count',
+        backgroundColor: '#42a5f5',
+        data: submissionCounts,
+        yAxisID: 'y'
+      },
+      {
+        type: 'line',
+        label: 'Overall Experience',
+        borderColor: '#66bb6a',
+        backgroundColor: '#66bb6a40',
+        data: overallExperience,
+        fill: false,
+        tension: 0.4,
+        pointRadius: 4,
+        yAxisID: 'y'
+      },
+      {
+        type: 'line',
+        label: 'Value For Money',
+        borderColor: '#ffa726',
+        backgroundColor: '#ffa72640',
+        data: valueForMoney,
+        fill: false,
+        tension: 0.4,
+        pointRadius: 4,
+        yAxisID: 'y'
+      },
+      {
+        type: 'line',
+        label: 'Recommendation Score',
+        borderColor: '#ab47bc',
+        backgroundColor: '#ab47bc40',
+        data: recommendationScore,
+        fill: false,
+        tension: 0.4,
+        pointRadius: 4,
+        yAxisID: 'y'
+      }
+    ]
+  }
+}
+
 const fetchTopStores = async () => {
   try {
     const res = await api.get('reports/top-stores')
-    const data = res.data
-
-    const labels = data.map(item => item.store_name ?? 'Unknown Store')
-    const submissionCounts = data.map(item => parseInt(item.submission_count ?? 0))
-    const overallExperience = data.map(item => parseFloat(item.overall_experience ?? 0))
-    const valueForMoney = data.map(item => parseFloat(item.value_for_money ?? 0))
-    const recommendationScore = data.map(item => parseFloat(item.recommendation_score ?? 0))
-
-    topStoresChartData.value = {
-      labels,
-      datasets: [
-        {
-          type: 'bar',
-          label: 'Submission Count',
-          backgroundColor: '#42a5f5',
-          data: submissionCounts,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Overall Experience',
-          borderColor: '#66bb6a',
-          backgroundColor: '#66bb6a40',
-          data: overallExperience,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Value For Money',
-          borderColor: '#ffa726',
-          backgroundColor: '#ffa72640',
-          data: valueForMoney,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Recommendation Score',
-          borderColor: '#ab47bc',
-          backgroundColor: '#ab47bc40',
-          data: recommendationScore,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        }
-      ]
-    }
+    topStoresChartData.value = createChartData(res.data, 'store_name')
   } catch (err) {
     console.error('Error fetching top stores:', err)
   }
@@ -178,59 +185,7 @@ const fetchTopStores = async () => {
 const fetchTopAms = async () => {
   try {
     const res = await api.get('reports/top-areas')
-    const data = res.data
-
-    const labels = data.map(item => item.employee_id ?? 'Unknown')
-    const submissionCounts = data.map(item => parseInt(item.submission_count ?? 0))
-    const overallExperience = data.map(item => parseFloat(item.overall_experience ?? 0))
-    const valueForMoney = data.map(item => parseFloat(item.value_for_money ?? 0))
-    const recommendationScore = data.map(item => parseFloat(item.recommendation_score ?? 0))
-
-    topAmsChartData.value = {
-      labels,
-      datasets: [
-        {
-          type: 'bar',
-          label: 'Submission Count',
-          backgroundColor: '#42a5f5',
-          data: submissionCounts,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Overall Experience',
-          borderColor: '#66bb6a',
-          backgroundColor: '#66bb6a40',
-          data: overallExperience,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Value For Money',
-          borderColor: '#ffa726',
-          backgroundColor: '#ffa72640',
-          data: valueForMoney,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Recommendation Score',
-          borderColor: '#ab47bc',
-          backgroundColor: '#ab47bc40',
-          data: recommendationScore,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        }
-      ]
-    }
+    topAmsChartData.value = createChartData(res.data, 'employee_id')
   } catch (err) {
     console.error('Error fetching top AMs:', err)
   }
@@ -239,71 +194,20 @@ const fetchTopAms = async () => {
 const fetchTopTms = async () => {
   try {
     const res = await api.get('reports/top-territories')
-    const data = res.data
-
-    const labels = data.map(item => item.employee_id ?? 'Unknown')
-    const submissionCounts = data.map(item => parseInt(item.submission_count ?? 0))
-    const overallExperience = data.map(item => parseFloat(item.overall_experience ?? 0))
-    const valueForMoney = data.map(item => parseFloat(item.value_for_money ?? 0))
-    const recommendationScore = data.map(item => parseFloat(item.recommendation_score ?? 0))
-
-    topTmsChartData.value = {
-      labels,
-      datasets: [
-        {
-          type: 'bar',
-          label: 'Submission Count',
-          backgroundColor: '#42a5f5',
-          data: submissionCounts,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Overall Experience',
-          borderColor: '#66bb6a',
-          backgroundColor: '#66bb6a40',
-          data: overallExperience,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Value For Money',
-          borderColor: '#ffa726',
-          backgroundColor: '#ffa72640',
-          data: valueForMoney,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          type: 'line',
-          label: 'Recommendation Score',
-          borderColor: '#ab47bc',
-          backgroundColor: '#ab47bc40',
-          data: recommendationScore,
-          fill: false,
-          tension: 0.4,
-          pointRadius: 4,
-          yAxisID: 'y'
-        }
-      ]
-    }
+    topTmsChartData.value = createChartData(res.data, 'employee_id')
   } catch (err) {
     console.error('Error fetching top TMs:', err)
   }
 }
 
-onMounted(async () => {
-  await fetchZoneInsights()
-  await fetchTopStores()
-  await fetchTopAms()
-  await fetchTopTms()
+onMounted(() => {
+  fetchZoneInsights()
+  fetchTopStores()
+  fetchTopAms()
+  fetchTopTms()
 })
 </script>
+
 
 <style scoped>
 .dashboard {
