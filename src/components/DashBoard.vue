@@ -3,46 +3,46 @@
     <h1 class="title">Survey Dashboard</h1>
 
     <!-- Zone Insights Table -->
-    <div class="table-section">
-      <h3 class="table-title">Zone Insights</h3>
-      <table class="survey-table">
-        <thead>
-        <tr>
-          <th>Zone Name</th>
-          <th>Submission Count</th>
-          <th>Average Per Store</th>
-          <th>Value For Money</th>
-          <th>Overall Experience</th>
-          <th>Recommendation Score</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="zone in zoneInsights" :key="zone.zone_name">
-          <td>{{ zone.zone_name }}</td>
-          <td>{{ zone.submission_count }}</td>
-          <td>{{ zone.average_per_store }}</td>
-          <td>{{ zone.value_for_money }}</td>
-          <td>{{ zone.overall_experience }}</td>
-          <td>{{ zone.recommendation_score }}</td>
-        </tr>
-        </tbody>
-      </table>
+    <div class="card table-section">
+      <h3 class="section-title">Zone Insights</h3>
+      <div class="table-wrapper">
+        <table class="survey-table">
+          <thead>
+          <tr>
+            <th>Zone Name</th>
+            <th>Submission Count</th>
+            <th>Average Per Store</th>
+            <th>Value For Money</th>
+            <th>Overall Experience</th>
+            <th>Recommendation Score</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="zone in zoneInsights" :key="zone.zone_name">
+            <td>{{ zone.zone_name }}</td>
+            <td>{{ zone.submission_count }}</td>
+            <td>{{ zone.average_per_store }}</td>
+            <td>{{ zone.value_for_money }}</td>
+            <td>{{ zone.overall_experience }}</td>
+            <td>{{ zone.recommendation_score }}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Charts Row -->
-    <div class="charts-row">
-      <div class="chart">
-        <h3>Top Stores Report</h3>
+    <!-- Charts -->
+    <div class="chart-cards">
+      <div class="card chart-card">
+        <h3 class="section-title">Top Stores Report</h3>
         <Bar v-if="topStoresChartData" :data="topStoresChartData" :options="chartOptions" />
       </div>
-
-      <div class="chart">
-        <h3>Top 5 AM</h3>
+      <div class="card chart-card">
+        <h3 class="section-title">Top 5 AM</h3>
         <Bar v-if="topAmsChartData" :data="topAmsChartData" :options="chartOptions" />
       </div>
-
-      <div class="chart">
-        <h3>Top 5 TM</h3>
+      <div class="card chart-card">
+        <h3 class="section-title">Top 5 TM</h3>
         <Bar v-if="topTmsChartData" :data="topTmsChartData" :options="chartOptions" />
       </div>
     </div>
@@ -63,11 +63,10 @@ import {
   PointElement,
   CategoryScale,
   LinearScale,
-  LineController, // ✅ Import LineController
-  BarController   // ✅ (optional) Explicitly import BarController for clarity
+  LineController,
+  BarController
 } from 'chart.js'
 
-// ✅ Register all necessary components and controllers
 ChartJS.register(
     Title,
     Tooltip,
@@ -208,46 +207,51 @@ onMounted(() => {
 })
 </script>
 
-
 <style scoped>
 .dashboard {
-  padding: 1rem;
+  padding: 2rem;
   font-family: 'Segoe UI', sans-serif;
-  background: #f8f9fa;
+  background-color: #f0f2f5;
+  min-height: 100vh;
 }
 
 .title {
-  font-size: 1.8rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: bold;
   text-align: center;
   color: #f26822;
-  margin-bottom: 1.5rem;
-}
-
-h3 {
-  text-align: center;
-  color: #f26822;
-  margin-bottom: 1rem;
-  font-size: 1.4rem;
-}
-
-.table-section {
   margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f26822;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.table-wrapper {
   overflow-x: auto;
 }
 
 .survey-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
-  border-radius: 8px;
-  overflow: hidden;
   min-width: 600px;
 }
 
 .survey-table th,
 .survey-table td {
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border: 1px solid #dee2e6;
   text-align: center;
   font-size: 0.9rem;
@@ -259,42 +263,33 @@ h3 {
   font-weight: 500;
 }
 
-.charts-row {
+.chart-cards {
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
   justify-content: center;
 }
 
-.chart {
-  background-color: white;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.chart-card {
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
 }
 
-/* Mobile Responsive Styles */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .title {
     font-size: 1.5rem;
   }
 
-  h3 {
-    font-size: 1.2rem;
+  .section-title {
+    font-size: 1.1rem;
   }
 
   .survey-table {
     font-size: 0.85rem;
   }
 
-  .survey-table th,
-  .survey-table td {
-    padding: 0.5rem;
-  }
-
-  .chart {
+  .chart-card {
     max-width: 100%;
   }
 }
