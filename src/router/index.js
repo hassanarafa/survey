@@ -8,6 +8,7 @@ import SubmissionDetails from "@/components/SubmissionDetail.vue";
 import SurveyList from "@/components/SurveyList.vue";
 import DashBoard from "@/components/DashBoard.vue";
 import DashBoardView from "@/views/DashView.vue";
+import DashBoardFinal from "@/views/DasBoardFinal.vue";
 
 // ✅ Token validation: checks structure and expiry
 function isTokenValid() {
@@ -82,6 +83,12 @@ const routes = [
         path: '/dashView',
         name: 'DashView',
         component: DashBoardView,
+        // meta: { requiresAuth: true }
+    },
+    {
+        path: '/dashFinal',
+        name: 'DashFinal',
+        component: DashBoardFinal,
         // meta: { requiresAuth: true }
     }
 ];

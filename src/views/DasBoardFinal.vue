@@ -83,30 +83,6 @@
       <button type="submit" class="apply-btn">Apply Filters</button>
     </form>
 
-    <!-- Results Section -->
-    <section class="results-section">
-      <h2 class="results-title">Net Performance Store</h2>
-
-      <div v-if="loading" class="loading">Loading data...</div>
-
-      <div v-else-if="stores.length" class="stores-grid">
-        <article v-for="store in stores" :key="store.storeId" class="store-card">
-          <header class="store-header">
-            <h3 class="store-name">{{ store.store_name }}</h3>
-            <span class="store-code">Code: {{ store.store_code }}</span>
-          </header>
-          <div class="store-details">
-            <p><strong>Submissions:</strong> {{ store.submission_count }}</p>
-            <p><strong>Recommendation Score:</strong> {{ store.recommendation_score }}</p>
-          </div>
-        </article>
-      </div>
-
-      <div v-else class="no-results">
-        <p>No data available. Try adjusting your filters.</p>
-      </div>
-    </section>
-
     <!-- Top 5 Stores -->
     <section class="results-section" v-if="top5.length">
       <h2 class="results-title">Top 5 Stores (NPS)</h2>
@@ -114,35 +90,20 @@
         <table class="store-table">
           <thead>
           <tr>
-            <th rowspan="2">Store Name</th>
-            <th rowspan="2">Store Code</th>
-            <th rowspan="2">Submission Count</th>
-            <th rowspan="2">Created At</th>
-            <th colspan="6">NPS Categories</th>
-            <th rowspan="2">Recommendation Score</th>
-          </tr>
-          <tr>
-            <th>Staff Behaviour</th>
-            <th>Speed Of Service</th>
-            <th>Cleanliness</th>
-            <th>Order Accuracy</th>
-            <th>Value For Money</th>
-            <th>Product Quality</th>
+            <th>Manager Name</th>
+            <th>Employee Id</th>
+            <th>Store Count</th>
+            <th>Feedback Count</th>
+            <th>Avg Feedback Per Store</th>
           </tr>
           </thead>
           <tbody>
           <tr v-for="store in top5" :key="store.storeId">
-            <td>{{ store.store_name }}</td>
-            <td>{{ store.store_code }}</td>
-            <td>{{ store.submission_count }}</td>
-            <td>{{ formatDate(store.created_at) }}</td>
-            <td>{{ store.nps_staff_behaviour }}</td>
-            <td>{{ store.nps_speed_of_service }}</td>
-            <td>{{ store.nps_cleanliness }}</td>
-            <td>{{ store.nps_order_accuracy }}</td>
-            <td>{{ store.nps_value_for_money }}</td>
-            <td>{{ store.nps_product_quality }}</td>
-            <td>{{ store.recommendation_score }}</td>
+            <td>{{ store.manager_name }}</td>
+            <td>{{ store.employee_id }}</td>
+            <td>{{ store.store_count }}</td>
+            <td>{{ store.feedback_count }}</td>
+            <td>{{ store.avg_feedback_per_store }}</td>
           </tr>
           </tbody>
         </table>
@@ -150,64 +111,31 @@
     </section>
 
     <!-- Bottom 5 Stores -->
-    <section class="results-section" v-if="bottom5.length">
+    <section class="results-section" v-if="topTm.length">
       <h2 class="results-title">Bottom 5 Stores (NPS)</h2>
       <div class="responsive-table">
         <table class="store-table">
           <thead>
           <tr>
-            <th rowspan="2">Store Name</th>
-            <th rowspan="2">Store Code</th>
-            <th rowspan="2">Submission Count</th>
-            <th rowspan="2">Created At</th>
-            <th colspan="6">NPS Categories</th>
-            <th rowspan="2">Recommendation Score</th>
-          </tr>
-          <tr>
-            <th>Staff Behaviour</th>
-            <th>Speed Of Service</th>
-            <th>Cleanliness</th>
-            <th>Order Accuracy</th>
-            <th>Value For Money</th>
-            <th>Product Quality</th>
+            <th>Manager Name</th>
+            <th>Employee Id</th>
+            <th>Store Count</th>
+            <th>Feedback Count</th>
+            <th>Avg Feedback Per Store</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="store in bottom5" :key="store.storeId">
-            <td>{{ store.store_name }}</td>
-            <td>{{ store.store_code }}</td>
-            <td>{{ store.submission_count }}</td>
-            <td>{{ formatDate(store.created_at) }}</td>
-            <td>{{ store.nps_staff_behaviour }}</td>
-            <td>{{ store.nps_speed_of_service }}</td>
-            <td>{{ store.nps_cleanliness }}</td>
-            <td>{{ store.nps_order_accuracy }}</td>
-            <td>{{ store.nps_value_for_money }}</td>
-            <td>{{ store.nps_product_quality }}</td>
-            <td>{{ store.recommendation_score }}</td>
+          <tr v-for="store in topTm" :key="store.storeId">
+            <td>{{ store.manager_name }}</td>
+            <td>{{ store.employee_id }}</td>
+            <td>{{ store.store_count }}</td>
+            <td>{{ store.feedback_count }}</td>
+            <td>{{ store.avg_feedback_per_store }}</td>
           </tr>
           </tbody>
         </table>
       </div>
     </section>
-
-    <!-- Add this wrapper div -->
-    <div class="charts-row">
-      <div class="card chart-card">
-        <h3 class="section-title">Visit Frequency</h3>
-        <Pie v-if="visitFreq" :data="visitFreq" :options="chartOptions" />
-      </div>
-
-      <div class="card chart-card">
-        <h3 class="section-title">Gender Stats</h3>
-        <Pie v-if="genderStats" :data="genderStats" :options="chartOptions" />
-      </div>
-
-      <div class="card chart-card">
-        <h3 class="section-title">Age Stats</h3>
-        <Pie v-if="ageStats" :data="ageStats" :options="chartOptions" />
-      </div>
-    </div>
 
 
     <!-- New Section: Top Non-Recommended Reasons -->
@@ -217,20 +145,16 @@
         <table class="store-table">
           <thead>
           <tr>
-            <th>Answer Text</th>
-            <th>Created At</th>
-            <th>Store ID</th>
             <th>Store Name</th>
             <th>Store Code</th>
+            <th>Feedback Count</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="reason in recommendationReasons" :key="reason.created_at + reason.store_id">
-            <td>{{ reason.answer_text }}</td>
-            <td>{{ reason.created_at_formatted }}</td>
-            <td>{{ reason.store_id }}</td>
+          <tr v-for="reason in recommendationReasons" :key="reason.store_id">
             <td>{{ reason.store_name }}</td>
             <td>{{ reason.store_code }}</td>
+            <td>{{ reason.feedback_count }}</td>
           </tr>
           </tbody>
         </table>
@@ -242,32 +166,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { Pie } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
-import ChartDataLabels from 'chartjs-plugin-datalabels'
 
-ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels)
-
-const chartOptions = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top'
-    },
-    title: {
-      display: true,
-      text: ''
-    },
-    datalabels: {
-      color: '#fff',
-      formatter: (value) => value,
-      font: {
-        weight: 'bold',
-        size: 14
-      }
-    }
-  }
-}
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 
 const filters = ref({
@@ -292,14 +193,9 @@ const filterLabels = {
   storeId: 'Store'
 }
 
-const stores = ref([])
 const top5 = ref([])
-const bottom5 = ref([])
+const topTm = ref([])
 const recommendationReasons = ref([])
-const ageStats = ref(null)
-
-const visitFreq = ref(null)
-const genderStats = ref(null)
 
 const zones = ref([])
 const regions = ref([])
@@ -310,121 +206,39 @@ const rm = ref([])
 
 const loading = ref(false)
 
-const generateColors = (count) => {
-  const colors = ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA', '#F472B6', '#10B981']
-  return Array.from({ length: count }, (_, i) => colors[i % colors.length])
-}
-
-const formatDate = (isoString) => {
-  if (!isoString) return '';
-  return isoString.split('T')[0]; // Split by 'T' and take the date part only
-};
-
 const fetchData = async () => {
   loading.value = true
   try {
-    // Overall stores data
-    const overallResponse = await axios.post(
-        'https://survey.dd-ops.com/api/reports/Overall',
-        { ...filters.value }
-    )
-    stores.value = overallResponse.data.stores || []
 
     // Top and bottom 5 stores NPS data
     const topStoresResponse = await axios.post(
-        'https://survey.dd-ops.com/api/reports/top-stores-nps',
+        'https://survey.dd-ops.com/api/reports/am',
         { ...filters.value }
     )
-    top5.value = topStoresResponse.data.top_5 || []
-    bottom5.value = topStoresResponse.data.bottom_5 || []
-
+    top5.value = topStoresResponse.data.mul_feedback_stats || []
+    console.log("///////////////////////////////")
+    console.log(top5.value)
+    console.log("///////////////////////////////")
     // Fetch top non-recommendation reasons
     const nonRecResponse = await axios.post(
-        'https://survey.dd-ops.com/api/reports/top_non_rec',
+        'https://survey.dd-ops.com/api/reports/tm',
         { ...filters.value }
     )
-    recommendationReasons.value = nonRecResponse.data.recommendation_reasons || []
+    topTm.value = nonRecResponse.data.tm_feedback_stats || []
 
-    const res = await axios.post('https://survey.dd-ops.com/api/reports/Gender_stats', { ...filters.value })
-    const genderArray = res.data.gender_stats || res.data
-
-    if (Array.isArray(genderArray)) {
-      const genderCountMap = {}
-      genderArray.forEach(item => {
-        const gender = item.answer_text || 'Unknown'
-        genderCountMap[gender] = (genderCountMap[gender] || 0) + 1
-      })
-
-      const labels = Object.keys(genderCountMap)
-      const data = Object.values(genderCountMap)
-
-      genderStats.value = {
-        labels,
-        datasets: [{
-          label: 'Gender Distribution',
-          data,
-          backgroundColor: generateColors(labels.length)
-        }]
-      }
-    }
-
-    const res2 = await axios.post('https://survey.dd-ops.com/api/reports/Visit_freq', { ...filters.value })
-    const visitArray = res2.data.visit_frequency_stats || res2.data
-
-    if (Array.isArray(visitArray)) {
-      console.log("*/*/*/")
-      const visitCountMap = {}
-      visitArray.forEach(item => {
-        const freq = item.answer_text || 'Unknown'
-        visitCountMap[freq] = (visitCountMap[freq] || 0) + 1
-      })
-
-      const labels = Object.keys(visitCountMap)
-      const data = Object.values(visitCountMap)
-
-      visitFreq.value = {
-        labels,
-        datasets: [{
-          label: 'Visit Frequency',
-          data,
-          backgroundColor: generateColors(labels.length)
-        }]
-      }
-    }
-
-    const res3 = await axios.post('https://survey.dd-ops.com/api/reports/Age_stats', { ...filters.value })
-    const ageArray = res3.data.customer_age_stats || res3.data
-
-    if (Array.isArray(ageArray)) {
-      const ageCountMap = {}
-      ageArray.forEach(item => {
-        const ageGroup = item.answer_text || 'Unknown'
-        ageCountMap[ageGroup] = (ageCountMap[ageGroup] || 0) + 1
-      })
-
-      const labels = Object.keys(ageCountMap)
-      const data = Object.values(ageCountMap)
-
-      console.log(labels)
-      console.log(data)
-
-      ageStats.value = {
-        labels,
-        datasets: [{
-          label: 'Age Distribution',
-          data,
-          backgroundColor: generateColors(labels.length)
-        }]
-      }
-    }
-
+    const nonRcResponse = await axios.post(
+        'https://survey.dd-ops.com/api/reports/stores',
+        { ...filters.value }
+    )
+    recommendationReasons.value = [
+      ...(nonRcResponse.data.top_10_stores || []),
+      ...(nonRcResponse.data.bottom_10_stores || [])
+    ]
   } catch (error) {
     console.error('Error fetching data:', error)
-    stores.value = []
     top5.value = []
-    bottom5.value = []
+    topTm.value = []
     recommendationReasons.value = []
-    ageStats.value = []
   } finally {
     loading.value = false
   }
@@ -493,67 +307,10 @@ onMounted(() => {
   fetchAm()
   fetchTm()
   fetchRm()
-  formatDate()
 })
 </script>
 
 <style scoped>
-.charts-row {
-  display: flex;
-  justify-content: space-between; /* space between charts */
-  gap: 20px; /* optional, to add space between the charts */
-  flex-wrap: nowrap; /* prevent wrapping if you want them all on one line */
-  margin-top: 20px; /* some vertical spacing */
-}
-
-/* Optional: make each chart card take equal width */
-.charts-row .chart-card {
-  flex: 1 1 0; /* grow and shrink equally */
-  min-width: 0; /* prevent overflow */
-}
-
-/* Optional: you can limit max-width per chart */
-.charts-row .chart-card {
-  max-width: 33%; /* or some fixed pixel width like 300px */
-}
-
-.chart-card {
-  background-color: #ffffff;
-  border-radius: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  padding: 1.5rem;
-  margin: 2rem 0;
-  max-width: 600px;
-  width: 100%;
-  transition: transform 0.3s ease;
-}
-
-.chart-card:hover {
-  transform: translateY(-5px);
-}
-
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #111827;
-  text-align: center;
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-@media (min-width: 768px) {
-  .chart-card {
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
-
 .app-container {
   max-width: 1200px;
   margin: 2rem auto;
@@ -652,9 +409,9 @@ onMounted(() => {
 }
 
 .results-section {
-  margin-top: 15px;
   background: white;
   padding: 1.5rem 2rem;
+  margin-top: 15px;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(37, 99, 235, 0.12);
 }
@@ -666,63 +423,6 @@ onMounted(() => {
   color: #f26822;
   border-bottom: 2px solid #f26822;
   padding-bottom: 0.5rem;
-}
-
-.loading {
-  font-style: italic;
-  text-align: center;
-  color: #6b7280;
-  padding: 1rem 0;
-}
-
-.no-results {
-  text-align: center;
-  color: #9ca3af;
-  font-style: italic;
-  padding: 2rem 0;
-}
-
-.stores-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1.5rem;
-}
-
-.store-card {
-  background: #f9fafb;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 3px 8px rgba(45, 55, 72, 0.1);
-  transition: transform 0.2s ease;
-}
-
-.store-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.25);
-}
-
-.store-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0.3rem;
-}
-
-.store-name {
-  font-weight: 700;
-  font-size: 1.125rem;
-  color: #111827;
-}
-
-.store-code {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #6b7280;
-  background: #d1d5db;
-  padding: 2px 8px;
-  border-radius: 6px;
 }
 
 .store-details p {
