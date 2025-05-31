@@ -2,160 +2,130 @@
   <div class="app-container">
     <h1 class="title">📊 Store Reports Filter</h1>
 
-    <!-- Filter Section -->
     <form @submit.prevent="fetchData" class="filter-section">
       <h2 class="filter-title">Filter Criteria</h2>
       <div class="filters-grid">
         <div v-for="(label, key) in filterLabels" :key="key" class="filter-item">
           <label :for="key" class="filter-label">{{ label }}</label>
 
-          <select
-              v-if="key === 'zone_id'"
-              v-model="filters.zone_id"
-              :id="key"
-              class="filter-input"
-          >
+          <select v-if="key === 'zone_id'" v-model="filters.zone_id" :id="key" class="filter-input">
             <option value="">Select Zone</option>
             <option v-for="zone in zones" :key="zone.id" :value="zone.id">{{ zone.id }}</option>
           </select>
 
-          <select
-              v-else-if="key === 'region_id'"
-              v-model="filters.region_id"
-              :id="key"
-              class="filter-input"
-          >
+          <select v-else-if="key === 'region_id'" v-model="filters.region_id" :id="key" class="filter-input">
             <option value="">Select Region</option>
             <option v-for="region in regions" :key="region.id" :value="region.id">{{ region.id }}</option>
           </select>
 
-          <select
-              v-else-if="key === 'storeId'"
-              v-model="filters.storeId"
-              :id="key"
-              class="filter-input"
-          >
+          <select v-else-if="key === 'storeId'" v-model="filters.storeId" :id="key" class="filter-input">
             <option value="">Select Store</option>
             <option v-for="storeItem in store" :key="storeItem.id" :value="storeItem.id">{{ storeItem.id }}</option>
           </select>
 
-          <select
-              v-else-if="key === 'am'"
-              v-model="filters.am"
-              :id="key"
-              class="filter-input"
-          >
+          <select v-else-if="key === 'am'" v-model="filters.am" :id="key" class="filter-input">
             <option value="">Select AM</option>
             <option v-for="user in am" :key="user.id" :value="user.id">{{ user.id }}</option>
           </select>
 
-          <select
-              v-else-if="key === 'tm'"
-              v-model="filters.tm"
-              :id="key"
-              class="filter-input"
-          >
+          <select v-else-if="key === 'tm'" v-model="filters.tm" :id="key" class="filter-input">
             <option value="">Select TM</option>
             <option v-for="user in tm" :key="user.id" :value="user.id">{{ user.id }}</option>
           </select>
 
-          <select
-              v-else-if="key === 'rm'"
-              v-model="filters.rm"
-              :id="key"
-              class="filter-input"
-          >
+          <select v-else-if="key === 'rm'" v-model="filters.rm" :id="key" class="filter-input">
             <option value="">Select RM</option>
             <option v-for="user in rm" :key="user.id" :value="user.id">{{ user.id }}</option>
           </select>
 
-          <input
-              v-else
-              :type="['from', 'to'].includes(key) ? 'date' : 'text'"
-              :id="key"
-              v-model="filters[key]"
-              class="filter-input"
-              :placeholder="label"
-          />
+          <input v-else :type="['from', 'to'].includes(key) ? 'date' : 'text'" :id="key" v-model="filters[key]"
+            class="filter-input" :placeholder="label" />
         </div>
       </div>
 
       <button type="submit" class="apply-btn">Apply Filters</button>
     </form>
 
-    <!-- Top 5 Stores -->
     <section class="results-section" v-if="top5.length">
-      <h2 class="results-title">Top 5 Stores (NPS)</h2>
+      <h2 class="results-title">List Of Am</h2>
       <div class="responsive-table">
         <table class="store-table">
           <thead>
-          <tr>
-            <th>Manager Name</th>
-            <th>Employee Id</th>
-            <th>Store Count</th>
-            <th>Feedback Count</th>
-            <th>Avg Feedback Per Store</th>
-          </tr>
+            <tr>
+              <th>Manager Name</th>
+              <th>Employee Id</th>
+              <th>Store Count</th>
+              <th>Feedback Count</th>
+              <th>Avg Feedback Per Store</th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="store in top5" :key="store.storeId">
-            <td>{{ store.manager_name }}</td>
-            <td>{{ store.employee_id }}</td>
-            <td>{{ store.store_count }}</td>
-            <td>{{ store.feedback_count }}</td>
-            <td>{{ store.avg_feedback_per_store }}</td>
-          </tr>
+            <tr v-for="store in top5" :key="store.storeId">
+              <td>{{ store.manager_name }}</td>
+              <td>{{ store.employee_id }}</td>
+              <td>{{ store.store_count }}</td>
+              <td>{{ store.feedback_count }}</td>
+              <td>{{ store.avg_feedback_per_store }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- Bottom 5 Stores -->
     <section class="results-section" v-if="topTm.length">
-      <h2 class="results-title">Bottom 5 Stores (NPS)</h2>
+      <h2 class="results-title">List Of Tm</h2>
       <div class="responsive-table">
         <table class="store-table">
           <thead>
-          <tr>
-            <th>Manager Name</th>
-            <th>Employee Id</th>
-            <th>Store Count</th>
-            <th>Feedback Count</th>
-            <th>Avg Feedback Per Store</th>
-          </tr>
+            <tr>
+              <th>Manager Name</th>
+              <th>Employee Id</th>
+              <th>Store Count</th>
+              <th>Feedback Count</th>
+              <th>Avg Feedback Per Store</th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="store in topTm" :key="store.storeId">
-            <td>{{ store.manager_name }}</td>
-            <td>{{ store.employee_id }}</td>
-            <td>{{ store.store_count }}</td>
-            <td>{{ store.feedback_count }}</td>
-            <td>{{ store.avg_feedback_per_store }}</td>
-          </tr>
+            <tr v-for="store in topTm" :key="store.storeId">
+              <td>{{ store.manager_name }}</td>
+              <td>{{ store.employee_id }}</td>
+              <td>{{ store.store_count }}</td>
+              <td>{{ store.feedback_count }}</td>
+              <td>{{ store.avg_feedback_per_store }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
     </section>
 
 
-    <!-- New Section: Top Non-Recommended Reasons -->
     <section class="results-section" v-if="recommendationReasons.length">
       <h2 class="results-title">Top Non-Recommended Reasons</h2>
       <div class="responsive-table">
         <table class="store-table">
           <thead>
-          <tr>
-            <th>Store Name</th>
-            <th>Store Code</th>
-            <th>Feedback Count</th>
-          </tr>
+            <tr>
+              <th>Store Name</th>
+              <th>Store Code</th>
+              <th>Feedback Count</th>
+              <th>Type</th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="reason in recommendationReasons" :key="reason.store_id">
-            <td>{{ reason.store_name }}</td>
-            <td>{{ reason.store_code }}</td>
-            <td>{{ reason.feedback_count }}</td>
-          </tr>
+            <tr v-for="reason in recommendationReasons" :key="reason.store_id">
+              <td>{{ reason.store_name }}</td>
+              <td>{{ reason.store_code }}</td>
+              <td>{{ reason.feedback_count }}</td>
+              <td>
+                <span :class="{
+                  'badge-top': reason.type === 'Top',
+                  'badge-bottom': reason.type === 'Bottom'
+                }">
+                  {{ reason.type }}
+                </span>
+              </td>
+
+            </tr>
           </tbody>
         </table>
       </div>
@@ -164,9 +134,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import axios from 'axios'
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import { ArcElement, Chart as ChartJS, Legend, Tooltip } from 'chart.js'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -210,30 +180,32 @@ const fetchData = async () => {
   loading.value = true
   try {
 
-    // Top and bottom 5 stores NPS data
     const topStoresResponse = await axios.post(
-        'https://survey.dd-ops.com/api/reports/am',
-        { ...filters.value }
+      'https://survey.dd-ops.com/api/reports/am',
+      { ...filters.value }
     )
     top5.value = topStoresResponse.data.mul_feedback_stats || []
-    console.log("///////////////////////////////")
     console.log(top5.value)
-    console.log("///////////////////////////////")
-    // Fetch top non-recommendation reasons
     const nonRecResponse = await axios.post(
-        'https://survey.dd-ops.com/api/reports/tm',
-        { ...filters.value }
+      'https://survey.dd-ops.com/api/reports/tm',
+      { ...filters.value }
     )
     topTm.value = nonRecResponse.data.tm_feedback_stats || []
 
     const nonRcResponse = await axios.post(
-        'https://survey.dd-ops.com/api/reports/stores',
-        { ...filters.value }
+      'https://survey.dd-ops.com/api/reports/stores',
+      { ...filters.value }
     )
     recommendationReasons.value = [
-      ...(nonRcResponse.data.top_10_stores || []),
-      ...(nonRcResponse.data.bottom_10_stores || [])
-    ]
+      ...nonRcResponse.data.top_10_stores.map(item => ({
+        ...item,
+        type: 'Top'
+      })),
+      ...nonRcResponse.data.bottom_10_stores.map(item => ({
+        ...item,
+        type: 'Bottom'
+      }))
+    ];
   } catch (error) {
     console.error('Error fetching data:', error)
     top5.value = []
@@ -319,14 +291,14 @@ onMounted(() => {
   background: #f9fafb;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-  color: #1f2937; /* cool gray 800 */
+  color: #1f2937;
 }
 
 .title {
   font-size: 2.5rem;
   font-weight: 800;
   margin-bottom: 1.5rem;
-  color: #f26822; /* blue-600 */
+  color: #f26822;
   text-align: center;
 }
 
@@ -342,7 +314,7 @@ onMounted(() => {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 1.25rem;
-  color: #f26822; /* blue-900 */
+  color: #f26822;
   border-bottom: 2px solid #f26822;
   padding-bottom: 0.25rem;
 }
@@ -361,20 +333,19 @@ onMounted(() => {
 .filter-label {
   font-weight: 600;
   margin-bottom: 0.4rem;
-  color: #374151; /* gray-700 */
+  color: #374151;
 }
 
 .filter-input {
   padding: 0.5rem 0.75rem;
-  border: 1.8px solid #d1d5db; /* gray-300 */
+  border: 1.8px solid #d1d5db;
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.25s ease-in-out;
-  color: #f26822; /* gray-900 */
+  color: #f26822;
   background-color: white;
 }
 
-/* Ensure options text color is visible */
 .filter-input option {
   color: #f26822;
   background-color: white;
@@ -435,46 +406,57 @@ onMounted(() => {
   overflow-x: auto;
 }
 
-/* Smaller table font size and padding */
 .store-table {
-  font-size: 12px;          /* Smaller font size */
+  font-size: 12px;
   border-collapse: collapse;
   width: 100%;
-  max-width: 1050px;         /* Limit max width */
-  margin: 0 auto;           /* Center horizontally */
-  color: #1f2937;           /* Dark text for readability */
+  max-width: 1050px;
+  margin: 0 auto;
+  color: #1f2937;
 }
 
-/* Smaller padding in table cells */
 .store-table th,
 .store-table td {
-  padding: 6px 8px;         /* Less padding */
-  border: 1px solid #f26822; /* Use main color for border */
+  padding: 6px 8px;
+  border: 1px solid #f26822;
   text-align: center;
 }
 
-/* Table header background in main color */
 .store-table thead th {
-  background-color: #f26822; /* Main color background */
-  color: white;              /* White text on colored background */
+  background-color: #f26822;
+  color: white;
   font-weight: 600;
 }
 
-/* Optional: alternate row color for readability */
 .store-table tbody tr:nth-child(even) {
-  background-color: #f4e4de; /* very light blue for even rows */
+  background-color: #f4e4de;
 }
 
-/* Responsive wrapper adjustment */
 .responsive-table {
   overflow-x: auto;
   max-width: 100%;
 }
 
-/* You can also reduce overall section padding/margin if needed */
 .results-section {
   padding: 12px 16px;
 }
 
+.badge-top {
+  background-color: #e0f7e9;
+  color: #1a7f37;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.badge-bottom {
+  background-color: #fdecea;
+  color: #b91c1c;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
 
 </style>

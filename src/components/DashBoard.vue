@@ -2,7 +2,6 @@
   <div class="dashboard">
     <h1 class="title">Survey Dashboard</h1>
 
-    <!-- Zone Insights Table -->
     <div class="card table-section">
       <h3 class="section-title">Zone Insights</h3>
       <div class="table-wrapper">
@@ -208,6 +207,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
 .dashboard {
   padding: 2rem;
   font-family: 'Segoe UI', sans-serif;
@@ -241,41 +241,53 @@ onMounted(() => {
 
 .table-wrapper {
   overflow-x: auto;
+  border-radius: 8px;
 }
 
 .survey-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px;
+  min-width: 700px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .survey-table th,
 .survey-table td {
-  padding: 0.75rem 1rem;
+  padding: 1rem;
   border: 1px solid #dee2e6;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .survey-table th {
   background-color: #f26822;
   color: white;
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.survey-table tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+.survey-table tbody tr:hover {
+  background-color: #fff3e6;
 }
 
 .chart-cards {
   display: flex;
-  flex-wrap: wrap;
   gap: 1.5rem;
-  justify-content: center;
+  overflow-x: auto;
+  padding-bottom: 1rem;
 }
 
 .chart-card {
+  flex-shrink: 0;
   width: 100%;
   max-width: 480px;
+  min-width: 300px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .title {
     font-size: 1.5rem;
@@ -293,4 +305,5 @@ onMounted(() => {
     max-width: 100%;
   }
 }
+
 </style>
